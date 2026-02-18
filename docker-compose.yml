@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: replacer_bot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  tg-bot:
+    image: node:20-alpine
+    restart: unless-stopped
+    working_dir: /app
+    env_file:
+      - .env
+    command: sh -c "npm install && npm --prefix apps/tg-bot run dev"
+    volumes:
+      - ./:/app
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    image: node:20-alpine
+    restart: unless-stopped
+    working_dir: /app
+    env_file:
+      - .env
+    command: sh -c "npm install && npm --prefix apps/worker run dev"
+    volumes:
+      - ./:/app
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:

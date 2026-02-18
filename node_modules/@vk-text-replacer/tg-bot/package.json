@@ -1,0 +1,21 @@
+{
+  "name": "@vk-text-replacer/tg-bot",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "npm --prefix ../../packages/shared run build && tsx src/index.ts",
+    "build": "tsc -b",
+    "start": "npm --prefix ../../packages/shared run build && node dist/index.js"
+  },
+  "dependencies": {
+    "@vk-text-replacer/shared": "file:../../packages/shared",
+    "bullmq": "^5.43.3",
+    "dotenv": "^16.4.7",
+    "grammy": "^1.35.0",
+    "ioredis": "^5.6.0",
+    "pino": "^9.6.0",
+    "vk-io": "^4.9.2"
+  }
+}
