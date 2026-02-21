@@ -28,7 +28,7 @@ async function bootstrap() {
     const queueService = (0, queue_service_1.createQueueService)(env.redisUrl, logger);
     const state = (0, state_service_1.createStateService)();
     const vkApi = null;
-    (0, telegram_service_1.registerBaseHandlers)(bot, { logger, state });
+    (0, telegram_service_1.registerBaseHandlers)(bot, { databaseUrl: env.databaseUrl, logger, state });
     (0, auth_flow_1.registerAuthFlow)(bot, {
         databaseUrl: env.databaseUrl,
         logger,

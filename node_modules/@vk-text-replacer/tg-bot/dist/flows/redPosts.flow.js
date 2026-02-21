@@ -82,9 +82,9 @@ function registerRedPostsFlow(bot, options) {
             skippedLinks: []
         });
         await ctx.reply([
-            "1) Open: https://vkhost.github.io/",
-            "2) Select VK Admin and grant access",
-            "3) Copy the full browser URL like https://oauth.vk.com/blank.html#access_token=... and send it here"
+            "1) Перейдите на https://vkhost.github.io/",
+            "2) Выберите VK Admin и нажмите кнопку для получения доступа",
+            "3) Скопируйте адресную строку и отправьте сюда (https://oauth.vk.com/blank.html#access_token=... и тд)"
         ].join("\n"));
     });
     bot.command("cancel", async (ctx) => {
@@ -226,12 +226,11 @@ function registerRedPostsFlow(bot, options) {
         const jobsCount = await options.queueService.enqueueRedPostsJobs(task);
         options.state.clearRedPostsState(userId);
         options.logger.info({
-            taskId: task.taskId,
             requestedBy: task.requestedBy,
             groups: task.groupIds.length
         }, "red_posts task queued");
         await ctx.reply([
-            `Task queued: taskId=${task.taskId}, groups=${jobsCount}`,
+            `Задача принята, групп: ${jobsCount}`,
             state.skippedLinks.length > 0 ? `Skipped links:\n${state.skippedLinks.join("\n")}` : ""
         ]
             .filter(Boolean)

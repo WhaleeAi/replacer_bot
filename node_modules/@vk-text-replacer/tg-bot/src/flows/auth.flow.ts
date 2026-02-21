@@ -1,7 +1,7 @@
 import type { Bot, Context } from "grammy";
 import type { Logger } from "pino";
+import { isUserAuthGranted, setUserAuthGranted, verifyUserPassword } from "@vk-text-replacer/shared";
 import type { StateService } from "../services/state.service";
-import { verifyUserPassword } from "@vk-text-replacer/shared";
 
 interface AuthFlowOptions {
   databaseUrl: string;
@@ -15,6 +15,13 @@ export function registerAuthFlow(bot: Bot<Context>, options: AuthFlowOptions): v
     if (!userId) {
       return;
     }
+
+    const alreadyAuthorized = options.state.isAuthorized(userId) || (await isUserAuthGranted(options.databaseUrl, userId));
+    if (alreadyAuthorized) {
+      options.state.authorize(userId);
+      return;
+    }
+
     options.state.requestAuth(userId);
     options.state.clearRedPostsState(userId);
     options.state.clearAddPackState(userId);
@@ -25,11 +32,11 @@ export function registerAuthFlow(bot: Bot<Context>, options: AuthFlowOptions): v
   bot.command("help", async (ctx) => {
     await ctx.reply(
       [
-        "/start - start auth",
-        "/help - help",
-        "/add_pack - create pack from public links",
-        "/red_posts - run text replacement",
-        "/red_comments - replace comments under matched posts"
+        "/start - авторизация",
+        "/help - помощь",
+        "/add_pack - создать пак из ссылок на паблики",
+        "/red_posts - запустить замену текста",
+        "/red_comments - заменить комментарии под подходящими постами"
       ].join("\n")
     );
   });
@@ -54,8 +61,9 @@ export function registerAuthFlow(bot: Bot<Context>, options: AuthFlowOptions): v
     );
 
     if (allowed) {
+      await setUserAuthGranted(options.databaseUrl, userId, true);
       options.state.authorize(userId);
-      await ctx.reply("Авторизация успешна. Доступна команда /red_posts.");
+      await ctx.reply("Авторизация успешна. Доступные команды смотрите в /help.");
       return;
     }
 

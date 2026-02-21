@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ensureDatabaseSchema = ensureDatabaseSchema;
 exports.ensureUser = ensureUser;
 exports.verifyUserPassword = verifyUserPassword;
+exports.setUserAuthGranted = setUserAuthGranted;
+exports.isUserAuthGranted = isUserAuthGranted;
 exports.upsertVkAccessToken = upsertVkAccessToken;
 exports.getVkAccessTokenByTelegramUserId = getVkAccessTokenByTelegramUserId;
 exports.createUserPack = createUserPack;
@@ -23,10 +25,12 @@ const SCHEMA_SQL = [
     telegram_user_id BIGINT NOT NULL UNIQUE,
     vk_user_id BIGINT,
     auth_password TEXT,
+    auth_granted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_password TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_granted BOOLEAN NOT NULL DEFAULT FALSE`,
     `CREATE TABLE IF NOT EXISTS vk_tokens (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -104,6 +108,23 @@ async function verifyUserPassword(databaseUrl, telegramUserId, password) {
         const row = asRow(result.rows?.[0]);
         const stored = typeof row.auth_password === "string" ? row.auth_password : "";
         return stored.length > 0 && stored === password;
+    });
+}
+async function setUserAuthGranted(databaseUrl, telegramUserId, granted) {
+    await withClient(databaseUrl, async (client) => {
+        const userId = await ensureUserWithClient(client, telegramUserId);
+        await client.query(`UPDATE users
+       SET auth_granted = $2, updated_at = NOW()
+       WHERE id = $1`, [userId, granted]);
+    });
+}
+async function isUserAuthGranted(databaseUrl, telegramUserId) {
+    return withClient(databaseUrl, async (client) => {
+        const result = await client.query(`SELECT auth_granted
+       FROM users
+       WHERE telegram_user_id = $1`, [telegramUserId]);
+        const row = asRow(result.rows?.[0]);
+        return Boolean(row.auth_granted);
     });
 }
 function asDate(value) {

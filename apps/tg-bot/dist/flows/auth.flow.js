@@ -8,6 +8,11 @@ function registerAuthFlow(bot, options) {
         if (!userId) {
             return;
         }
+        const alreadyAuthorized = options.state.isAuthorized(userId) || (await (0, shared_1.isUserAuthGranted)(options.databaseUrl, userId));
+        if (alreadyAuthorized) {
+            options.state.authorize(userId);
+            return;
+        }
         options.state.requestAuth(userId);
         options.state.clearRedPostsState(userId);
         options.state.clearAddPackState(userId);
@@ -16,11 +21,11 @@ function registerAuthFlow(bot, options) {
     });
     bot.command("help", async (ctx) => {
         await ctx.reply([
-            "/start - start auth",
-            "/help - help",
-            "/add_pack - create pack from public links",
-            "/red_posts - run text replacement",
-            "/red_comments - replace comments under matched posts"
+            "/start - авторизация",
+            "/help - помощь",
+            "/add_pack - создать пак из ссылок на паблики",
+            "/red_posts - запустить замену текста",
+            "/red_comments - заменить комментарии под подходящими постами"
         ].join("\n"));
     });
     bot.on("message:text", async (ctx, next) => {
@@ -37,8 +42,9 @@ function registerAuthFlow(bot, options) {
         const allowed = await (0, shared_1.verifyUserPassword)(options.databaseUrl, userId, text);
         options.logger.info({ userId, username: ctx.from?.username, allowed }, "Auth attempt received");
         if (allowed) {
+            await (0, shared_1.setUserAuthGranted)(options.databaseUrl, userId, true);
             options.state.authorize(userId);
-            await ctx.reply("Авторизация успешна. Доступна команда /red_posts.");
+            await ctx.reply("Авторизация успешна.");
             return;
         }
         options.state.requestAuth(userId);

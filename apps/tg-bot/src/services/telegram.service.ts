@@ -1,8 +1,10 @@
 import type { Bot, Context } from "grammy";
 import type { Logger } from "pino";
+import { isUserAuthGranted } from "@vk-text-replacer/shared";
 import type { StateService } from "./state.service";
 
 interface RegisterTelegramBaseOptions {
+  databaseUrl: string;
   logger: Logger;
   state: StateService;
 }
@@ -27,7 +29,20 @@ export function registerBaseHandlers(bot: Bot<Context>, options: RegisterTelegra
     }
 
     const userId = ctx.from?.id;
-    if (!userId || !options.state.isAuthorized(userId)) {
+    if (!userId) {
+      await ctx.reply("Требуется авторизация. Нажмите /start и введите пароль.");
+      return;
+    }
+
+    let allowed = options.state.isAuthorized(userId);
+    if (!allowed) {
+      allowed = await isUserAuthGranted(options.databaseUrl, userId);
+      if (allowed) {
+        options.state.authorize(userId);
+      }
+    }
+
+    if (!allowed) {
       await ctx.reply("Требуется авторизация. Нажмите /start и введите пароль.");
       return;
     }

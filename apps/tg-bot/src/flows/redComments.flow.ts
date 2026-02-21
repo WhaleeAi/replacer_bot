@@ -117,9 +117,9 @@ export function registerRedCommentsFlow(bot: Bot<Context>, options: RedCommentsF
 
     await ctx.reply(
       [
-        "1) Open: https://vkhost.github.io/",
-        "2) Select VK Admin and grant access",
-        "3) Send full URL like https://oauth.vk.com/blank.html#access_token=..."
+        "1) Перейдите на https://vkhost.github.io/",
+        "2) Выберите VK Admin и нажмите кнопку для получения доступа",
+        "3) Скопируйте адресную строку и отправьте сюда (https://oauth.vk.com/blank.html#access_token=... и тд)"
       ].join("\n")
     );
   });

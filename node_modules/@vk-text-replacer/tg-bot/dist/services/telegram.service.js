@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerBaseHandlers = registerBaseHandlers;
 exports.sendMessage = sendMessage;
+const shared_1 = require("@vk-text-replacer/shared");
 function extractCommandName(text) {
     const token = text.split(/\s+/)[0] ?? "";
     return token.slice(1).split("@")[0]?.toLowerCase() ?? "";
@@ -19,7 +20,18 @@ function registerBaseHandlers(bot, options) {
             return;
         }
         const userId = ctx.from?.id;
-        if (!userId || !options.state.isAuthorized(userId)) {
+        if (!userId) {
+            await ctx.reply("Требуется авторизация. Нажмите /start и введите пароль.");
+            return;
+        }
+        let allowed = options.state.isAuthorized(userId);
+        if (!allowed) {
+            allowed = await (0, shared_1.isUserAuthGranted)(options.databaseUrl, userId);
+            if (allowed) {
+                options.state.authorize(userId);
+            }
+        }
+        if (!allowed) {
             await ctx.reply("Требуется авторизация. Нажмите /start и введите пароль.");
             return;
         }

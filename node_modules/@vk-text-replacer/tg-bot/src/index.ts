@@ -29,7 +29,7 @@ async function bootstrap(): Promise<void> {
   const state = createStateService();
   const vkApi = null;
 
-  registerBaseHandlers(bot, { logger, state });
+  registerBaseHandlers(bot, { databaseUrl: env.databaseUrl, logger, state });
   registerAuthFlow(bot, {
     databaseUrl: env.databaseUrl,
     logger,

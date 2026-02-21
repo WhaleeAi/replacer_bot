@@ -2,6 +2,7 @@ import type { Bot, Context } from "grammy";
 import type { Logger } from "pino";
 import type { StateService } from "./state.service";
 interface RegisterTelegramBaseOptions {
+    databaseUrl: string;
     logger: Logger;
     state: StateService;
 }

@@ -120,9 +120,9 @@ export function registerRedPostsFlow(bot: Bot<Context>, options: RedPostsFlowOpt
     });
     await ctx.reply(
       [
-        "1) Open: https://vkhost.github.io/",
-        "2) Select VK Admin and grant access",
-        "3) Copy the full browser URL like https://oauth.vk.com/blank.html#access_token=... and send it here"
+        "1) Перейдите на https://vkhost.github.io/",
+        "2) Выберите VK Admin и нажмите кнопку для получения доступа",
+        "3) Скопируйте адресную строку и отправьте сюда (https://oauth.vk.com/blank.html#access_token=... и тд)"
       ].join("\n")
     );
   });
@@ -172,7 +172,7 @@ export function registerRedPostsFlow(bot: Bot<Context>, options: RedPostsFlowOpt
     });
 
     await ctx.answerCallbackQuery({ text: `Pack selected (${groupIds.length})` });
-    await ctx.reply("Pack selected. Now send text to find:");
+    await ctx.reply("Пак выбран. Теперь отправьте текст, который нужно заменить:");
   });
 
   bot.on("message:text", async (ctx, next) => {

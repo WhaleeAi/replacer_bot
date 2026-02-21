@@ -56,13 +56,13 @@ async function bootstrap() {
         taskStats.delete(taskId);
         const text = [
             `taskId: ${taskId}`,
-            `groupsTotal: ${stats.totalGroups}`,
-            `groupsProcessed: ${stats.processedGroups}`,
-            `checkedPosts: ${stats.checkedPosts}`,
-            `editedPosts: ${stats.editedPosts}`,
-            `skippedPosts: ${stats.skippedPosts}`,
-            `errorsCount: ${stats.errorsCount}`,
-            `failedGroups: ${stats.failedGroups}`
+            `Групп: ${stats.totalGroups}`,
+            `Обработано групп: ${stats.processedGroups}`,
+            `Просмотрено постов: ${stats.checkedPosts}`,
+            `Отредактировано постов: ${stats.editedPosts}`,
+            `Пропущено постов: ${stats.skippedPosts}`,
+            `Ошибок: ${stats.errorsCount}`,
+            `Провалено групп: ${stats.failedGroups}`
         ].join("\n");
         try {
             await (0, telegram_service_1.sendMessage)(stats.requestedBy, text);

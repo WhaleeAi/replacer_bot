@@ -2,6 +2,8 @@ import type { Logger } from "pino";
 export declare function ensureDatabaseSchema(databaseUrl: string, logger?: Logger): Promise<void>;
 export declare function ensureUser(databaseUrl: string, telegramUserId: number): Promise<number>;
 export declare function verifyUserPassword(databaseUrl: string, telegramUserId: number, password: string): Promise<boolean>;
+export declare function setUserAuthGranted(databaseUrl: string, telegramUserId: number, granted: boolean): Promise<void>;
+export declare function isUserAuthGranted(databaseUrl: string, telegramUserId: number): Promise<boolean>;
 export interface UpsertVkAccessTokenInput {
     telegramUserId: number;
     accessToken: string;
