@@ -73,6 +73,21 @@ function normalizePost(value) {
         attachments
     };
 }
+function normalizeComment(value) {
+    if (!value || typeof value !== "object") {
+        return null;
+    }
+    const candidate = value;
+    const id = toNumber(candidate.id);
+    if (id === undefined) {
+        return null;
+    }
+    return {
+        id,
+        text: typeof candidate.text === "string" ? candidate.text : "",
+        from_id: toNumber(candidate.from_id)
+    };
+}
 function isRetryableError(error) {
     const candidate = error;
     if (candidate?.status === 429 || candidate?.code === 6 || candidate?.code === 9) {
@@ -140,6 +155,49 @@ function createVkService(options) {
                 post_id: args.postId,
                 message: args.message,
                 attachments: args.attachments
+            }));
+        },
+        async getWallCommentsPage(vkAccessToken, groupId, postId, offset, count) {
+            const ownerId = -Math.abs(groupId);
+            const response = await callWithRetry(vkAccessToken, groupId, "wall.getComments", (api) => api.wall.getComments({
+                owner_id: ownerId,
+                post_id: postId,
+                need_likes: 0,
+                sort: "asc",
+                offset,
+                count
+            }));
+            const items = Array.isArray(response.items) ? response.items : [];
+            return items.map(normalizeComment).filter((comment) => comment !== null);
+        },
+        async openWallComments(vkAccessToken, groupId, postId) {
+            const ownerId = -Math.abs(groupId);
+            await callWithRetry(vkAccessToken, groupId, "wall.openComments", (api) => api.call("wall.openComments", {
+                owner_id: ownerId,
+                post_id: postId
+            }));
+        },
+        async closeWallComments(vkAccessToken, groupId, postId) {
+            const ownerId = -Math.abs(groupId);
+            await callWithRetry(vkAccessToken, groupId, "wall.closeComments", (api) => api.call("wall.closeComments", {
+                owner_id: ownerId,
+                post_id: postId
+            }));
+        },
+        async deleteWallComment(vkAccessToken, groupId, commentId) {
+            const ownerId = -Math.abs(groupId);
+            await callWithRetry(vkAccessToken, groupId, "wall.deleteComment", (api) => api.wall.deleteComment({
+                owner_id: ownerId,
+                comment_id: commentId
+            }));
+        },
+        async createWallCommentFromGroup(args) {
+            const ownerId = -Math.abs(args.groupId);
+            await callWithRetry(args.vkAccessToken, args.groupId, "wall.createComment", (api) => api.wall.createComment({
+                owner_id: ownerId,
+                post_id: args.postId,
+                from_group: Math.abs(args.groupId),
+                message: args.message
             }));
         }
     };

@@ -1,7 +1,7 @@
 import { API } from "vk-io";
 import type { Logger } from "pino";
 import type { RateLimitService } from "./rateLimit.service";
-import type { VkWallAttachmentRef, VkWallPost } from "@vk-text-replacer/shared";
+import type { VkWallAttachmentRef, VkWallComment, VkWallPost } from "@vk-text-replacer/shared";
 
 interface VkServiceOptions {
   apiVersion: string;
@@ -11,12 +11,28 @@ interface VkServiceOptions {
 
 export interface VkService {
   getWallPostsPage(vkAccessToken: string, groupId: number, offset: number, count: number): Promise<VkWallPost[]>;
+  getWallCommentsPage(
+    vkAccessToken: string,
+    groupId: number,
+    postId: number,
+    offset: number,
+    count: number
+  ): Promise<VkWallComment[]>;
   editWallPost(args: {
     vkAccessToken: string;
     groupId: number;
     postId: number;
     message: string;
     attachments?: string;
+  }): Promise<void>;
+  openWallComments(vkAccessToken: string, groupId: number, postId: number): Promise<void>;
+  closeWallComments(vkAccessToken: string, groupId: number, postId: number): Promise<void>;
+  deleteWallComment(vkAccessToken: string, groupId: number, commentId: number): Promise<void>;
+  createWallCommentFromGroup(args: {
+    vkAccessToken: string;
+    groupId: number;
+    postId: number;
+    message: string;
   }): Promise<void>;
 }
 
@@ -123,6 +139,29 @@ function normalizePost(value: unknown): VkWallPost | null {
   };
 }
 
+function normalizeComment(value: unknown): VkWallComment | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as {
+    id?: unknown;
+    text?: unknown;
+    from_id?: unknown;
+  };
+
+  const id = toNumber(candidate.id);
+  if (id === undefined) {
+    return null;
+  }
+
+  return {
+    id,
+    text: typeof candidate.text === "string" ? candidate.text : "",
+    from_id: toNumber(candidate.from_id)
+  };
+}
+
 function isRetryableError(error: unknown): boolean {
   const candidate = error as {
     code?: number;
@@ -216,6 +255,70 @@ export function createVkService(options: VkServiceOptions): VkService {
           post_id: args.postId,
           message: args.message,
           attachments: args.attachments
+        })
+      );
+    },
+
+    async getWallCommentsPage(
+      vkAccessToken: string,
+      groupId: number,
+      postId: number,
+      offset: number,
+      count: number
+    ): Promise<VkWallComment[]> {
+      const ownerId = -Math.abs(groupId);
+      const response = await callWithRetry(vkAccessToken, groupId, "wall.getComments", (api) =>
+        api.wall.getComments({
+          owner_id: ownerId,
+          post_id: postId,
+          need_likes: 0,
+          sort: "asc",
+          offset,
+          count
+        })
+      );
+      const items = Array.isArray(response.items) ? response.items : [];
+      return items.map(normalizeComment).filter((comment): comment is VkWallComment => comment !== null);
+    },
+
+    async openWallComments(vkAccessToken: string, groupId: number, postId: number): Promise<void> {
+      const ownerId = -Math.abs(groupId);
+      await callWithRetry(vkAccessToken, groupId, "wall.openComments", (api) =>
+        api.call("wall.openComments", {
+          owner_id: ownerId,
+          post_id: postId
+        })
+      );
+    },
+
+    async closeWallComments(vkAccessToken: string, groupId: number, postId: number): Promise<void> {
+      const ownerId = -Math.abs(groupId);
+      await callWithRetry(vkAccessToken, groupId, "wall.closeComments", (api) =>
+        api.call("wall.closeComments", {
+          owner_id: ownerId,
+          post_id: postId
+        })
+      );
+    },
+
+    async deleteWallComment(vkAccessToken: string, groupId: number, commentId: number): Promise<void> {
+      const ownerId = -Math.abs(groupId);
+      await callWithRetry(vkAccessToken, groupId, "wall.deleteComment", (api) =>
+        api.wall.deleteComment({
+          owner_id: ownerId,
+          comment_id: commentId
+        })
+      );
+    },
+
+    async createWallCommentFromGroup(args): Promise<void> {
+      const ownerId = -Math.abs(args.groupId);
+      await callWithRetry(args.vkAccessToken, args.groupId, "wall.createComment", (api) =>
+        api.wall.createComment({
+          owner_id: ownerId,
+          post_id: args.postId,
+          from_group: Math.abs(args.groupId),
+          message: args.message
         })
       );
     }

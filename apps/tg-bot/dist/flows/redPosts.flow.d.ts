@@ -1,4 +1,4 @@
-import type { Bot, Context } from "grammy";
+import { type Bot, type Context } from "grammy";
 import type { Logger } from "pino";
 import type { QueueService } from "../services/queue.service";
 import type { API } from "vk-io";

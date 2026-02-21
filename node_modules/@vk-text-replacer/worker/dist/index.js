@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const bullmq_1 = require("bullmq");
 const shared_1 = require("@vk-text-replacer/shared");
+const processComments_job_1 = require("./jobs/processComments.job");
 const processGroup_job_1 = require("./jobs/processGroup.job");
 const vk_service_1 = require("./services/vk.service");
 const rateLimit_service_1 = require("./services/rateLimit.service");
@@ -70,7 +71,7 @@ async function bootstrap() {
             logger.warn({ err: error, taskId }, "Failed to send final task summary");
         }
     }
-    const worker = new bullmq_1.Worker(shared_1.QUEUE_NAMES.VK_RED_POSTS, async (job) => {
+    const postWorker = new bullmq_1.Worker(shared_1.QUEUE_NAMES.VK_RED_POSTS, async (job) => {
         return (0, processGroup_job_1.processGroupJob)(job, {
             logger,
             vkService,
@@ -80,7 +81,16 @@ async function bootstrap() {
         connection,
         concurrency: env.workerConcurrency
     });
-    worker.on("completed", (job, result) => {
+    const commentsWorker = new bullmq_1.Worker(shared_1.QUEUE_NAMES.VK_RED_COMMENTS, async (job) => {
+        return (0, processComments_job_1.processCommentsJob)(job, {
+            logger,
+            vkService
+        });
+    }, {
+        connection,
+        concurrency: env.workerConcurrency
+    });
+    function handleCompleted(job, result) {
         logger.info({ jobId: job.id, result }, "Worker job completed");
         const current = taskStats.get(result.taskId) ?? {
             requestedBy: job.data.requestedBy,
@@ -99,8 +109,8 @@ async function bootstrap() {
         current.errorsCount += result.errorsCount;
         taskStats.set(result.taskId, current);
         void flushTaskSummary(result.taskId);
-    });
-    worker.on("failed", (job, err) => {
+    }
+    function handleFailed(job, err) {
         logger.error({ jobId: job?.id, err }, "Worker job failed");
         if (!job) {
             return;
@@ -121,9 +131,14 @@ async function bootstrap() {
         current.errorsCount += 1;
         taskStats.set(taskId, current);
         void flushTaskSummary(taskId);
-    });
+    }
+    postWorker.on("completed", (job, result) => handleCompleted(job, result));
+    commentsWorker.on("completed", (job, result) => handleCompleted(job, result));
+    postWorker.on("failed", (job, err) => handleFailed(job, err));
+    commentsWorker.on("failed", (job, err) => handleFailed(job, err));
     logger.info({
         queue: shared_1.QUEUE_NAMES.VK_RED_POSTS,
+        commentsQueue: shared_1.QUEUE_NAMES.VK_RED_COMMENTS,
         workerConcurrency: env.workerConcurrency,
         vkRps: env.vkRps
     }, "Worker started");

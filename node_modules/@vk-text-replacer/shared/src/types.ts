@@ -1,6 +1,7 @@
 export const QUEUE_NAMES = {
   PROCESS_GROUP: "process-group",
-  VK_RED_POSTS: "vk-red-posts"
+  VK_RED_POSTS: "vk-red-posts",
+  VK_RED_COMMENTS: "vk-red-comments"
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -22,6 +23,17 @@ export interface VkRedPostJobPayload {
   findText: string;
   replaceText: string;
   cutoffDays: number;
+  vkAccessToken: string;
+}
+
+export interface VkRedCommentsJobPayload {
+  taskId: string;
+  requestedBy: number;
+  totalGroups: number;
+  groupId: number;
+  postTextFragment: string;
+  oldCommentFragment: string;
+  newCommentText: string;
   vkAccessToken: string;
 }
 
@@ -57,6 +69,23 @@ export interface RedPostsTask {
   cutoffDays: number;
   vkAccessToken: string;
   createdAt: string;
+}
+
+export interface RedCommentsTask {
+  taskId: string;
+  requestedBy: number;
+  groupIds: number[];
+  postTextFragment: string;
+  oldCommentFragment: string;
+  newCommentText: string;
+  vkAccessToken: string;
+  createdAt: string;
+}
+
+export interface VkWallComment {
+  id: number;
+  text?: string;
+  from_id?: number;
 }
 
 export interface AppEnv {

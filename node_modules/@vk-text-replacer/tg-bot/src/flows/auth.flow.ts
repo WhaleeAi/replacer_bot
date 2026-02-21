@@ -17,6 +17,8 @@ export function registerAuthFlow(bot: Bot<Context>, options: AuthFlowOptions): v
     }
     options.state.requestAuth(userId);
     options.state.clearRedPostsState(userId);
+    options.state.clearAddPackState(userId);
+    options.state.clearRedCommentsState(userId);
     await ctx.reply("Введите ваш пароль:");
   });
 
@@ -25,7 +27,9 @@ export function registerAuthFlow(bot: Bot<Context>, options: AuthFlowOptions): v
       [
         "/start - start auth",
         "/help - help",
-        "/red_posts - run text replacement"
+        "/add_pack - create pack from public links",
+        "/red_posts - run text replacement",
+        "/red_comments - replace comments under matched posts"
       ].join("\n")
     );
   });

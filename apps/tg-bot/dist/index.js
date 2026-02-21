@@ -7,7 +7,9 @@ const grammy_1 = require("grammy");
 const shared_1 = require("@vk-text-replacer/shared");
 const queue_service_1 = require("./services/queue.service");
 const auth_flow_1 = require("./flows/auth.flow");
+const addPack_flow_1 = require("./flows/addPack.flow");
 const redPosts_flow_1 = require("./flows/redPosts.flow");
+const redComments_flow_1 = require("./flows/redComments.flow");
 const telegram_service_1 = require("./services/telegram.service");
 const state_service_1 = require("./services/state.service");
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -32,7 +34,9 @@ async function bootstrap() {
         logger,
         state
     });
+    (0, addPack_flow_1.registerAddPackFlow)(bot, { databaseUrl: env.databaseUrl, logger, state, vkApi });
     (0, redPosts_flow_1.registerRedPostsFlow)(bot, { databaseUrl: env.databaseUrl, queueService, logger, state, vkApi });
+    (0, redComments_flow_1.registerRedCommentsFlow)(bot, { databaseUrl: env.databaseUrl, queueService, logger, state, vkApi });
     await bot.start({
         onStart: (botInfo) => logger.info({ username: botInfo.username }, "Telegram bot started")
     });

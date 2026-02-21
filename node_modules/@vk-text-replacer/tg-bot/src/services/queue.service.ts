@@ -1,9 +1,16 @@
 import { Queue } from "bullmq";
-import { QUEUE_NAMES, type RedPostsTask, type VkRedPostJobPayload } from "@vk-text-replacer/shared";
+import {
+  QUEUE_NAMES,
+  type RedCommentsTask,
+  type RedPostsTask,
+  type VkRedCommentsJobPayload,
+  type VkRedPostJobPayload
+} from "@vk-text-replacer/shared";
 import type { Logger } from "pino";
 
 export interface QueueService {
   enqueueRedPostsJobs(task: RedPostsTask): Promise<number>;
+  enqueueRedCommentsJobs(task: RedCommentsTask): Promise<number>;
 }
 
 function createRedisConnection(redisUrl: string) {
@@ -32,6 +39,9 @@ export function createQueueService(redisUrl: string, logger: Logger): QueueServi
   const queue = new Queue<VkRedPostJobPayload>(QUEUE_NAMES.VK_RED_POSTS, {
     connection
   });
+  const commentsQueue = new Queue<VkRedCommentsJobPayload>(QUEUE_NAMES.VK_RED_COMMENTS, {
+    connection
+  });
 
   return {
     async enqueueRedPostsJobs(task) {
@@ -57,6 +67,31 @@ export function createQueueService(redisUrl: string, logger: Logger): QueueServi
         )
       );
       logger.info({ taskId: task.taskId, groups: task.groupIds.length }, "BullMQ jobs created");
+      return task.groupIds.length;
+    },
+    async enqueueRedCommentsJobs(task) {
+      await Promise.all(
+        task.groupIds.map((groupId) =>
+          commentsQueue.add(
+            "vk-red-comments-public",
+            {
+              taskId: task.taskId,
+              requestedBy: task.requestedBy,
+              totalGroups: task.groupIds.length,
+              groupId,
+              postTextFragment: task.postTextFragment,
+              oldCommentFragment: task.oldCommentFragment,
+              newCommentText: task.newCommentText,
+              vkAccessToken: task.vkAccessToken
+            },
+            {
+              removeOnComplete: true,
+              removeOnFail: 100
+            }
+          )
+        )
+      );
+      logger.info({ taskId: task.taskId, groups: task.groupIds.length }, "BullMQ comment jobs created");
       return task.groupIds.length;
     }
   };

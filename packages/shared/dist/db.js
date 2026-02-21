@@ -5,6 +5,9 @@ exports.ensureUser = ensureUser;
 exports.verifyUserPassword = verifyUserPassword;
 exports.upsertVkAccessToken = upsertVkAccessToken;
 exports.getVkAccessTokenByTelegramUserId = getVkAccessTokenByTelegramUserId;
+exports.createUserPack = createUserPack;
+exports.listUserPacks = listUserPacks;
+exports.getUserPackGroupIds = getUserPackGroupIds;
 function createPgClient(databaseUrl) {
     try {
         const { Client } = require("pg");
@@ -124,7 +127,7 @@ async function upsertVkAccessToken(databaseUrl, input) {
 }
 async function getVkAccessTokenByTelegramUserId(databaseUrl, telegramUserId) {
     return withClient(databaseUrl, async (client) => {
-        const result = await client.query(`SELECT u.telegram_user_id, t.access_token, t.expires_at
+        const result = await client.query(`SELECT u.telegram_user_id, t.access_token, t.expires_at, t.updated_at
        FROM users u
        INNER JOIN vk_tokens t ON t.user_id = u.id
        WHERE u.telegram_user_id = $1`, [telegramUserId]);
@@ -136,8 +139,66 @@ async function getVkAccessTokenByTelegramUserId(databaseUrl, telegramUserId) {
         return {
             telegramUserId: Number(row.telegram_user_id),
             accessToken,
-            expiresAt: asDate(row.expires_at)
+            expiresAt: asDate(row.expires_at),
+            updatedAt: asDate(row.updated_at)
         };
+    });
+}
+async function createUserPack(databaseUrl, telegramUserId, name, groupIds) {
+    return withClient(databaseUrl, async (client) => {
+        const userId = await ensureUserWithClient(client, telegramUserId);
+        const insertPack = await client.query(`INSERT INTO user_packs (user_id, name)
+       VALUES ($1, $2)
+       RETURNING id`, [userId, name]);
+        const packRow = asRow(insertPack.rows?.[0]);
+        const packId = Number(packRow.id);
+        if (!Number.isFinite(packId) || packId <= 0) {
+            throw new Error("Failed to create pack");
+        }
+        const uniqueGroupIds = [...new Set(groupIds.map((id) => Math.abs(Number(id))).filter((id) => id > 0))];
+        for (const groupId of uniqueGroupIds) {
+            await client.query(`INSERT INTO user_pack_groups (pack_id, group_id)
+         VALUES ($1, $2)
+         ON CONFLICT (pack_id, group_id) DO NOTHING`, [packId, groupId]);
+        }
+        return packId;
+    });
+}
+async function listUserPacks(databaseUrl, telegramUserId) {
+    return withClient(databaseUrl, async (client) => {
+        const result = await client.query(`SELECT p.id, p.name, COUNT(g.group_id) AS groups_count
+       FROM users u
+       INNER JOIN user_packs p ON p.user_id = u.id
+       LEFT JOIN user_pack_groups g ON g.pack_id = p.id
+       WHERE u.telegram_user_id = $1
+       GROUP BY p.id, p.name
+       ORDER BY p.created_at DESC`, [telegramUserId]);
+        return (result.rows ?? []).map((raw) => {
+            const row = asRow(raw);
+            return {
+                id: Number(row.id),
+                name: String(row.name ?? ""),
+                groupsCount: Number(row.groups_count ?? 0)
+            };
+        });
+    });
+}
+async function getUserPackGroupIds(databaseUrl, telegramUserId, packId) {
+    return withClient(databaseUrl, async (client) => {
+        const access = await client.query(`SELECT p.id
+       FROM users u
+       INNER JOIN user_packs p ON p.user_id = u.id
+       WHERE u.telegram_user_id = $1 AND p.id = $2`, [telegramUserId, packId]);
+        if (!(access.rows ?? []).length) {
+            return null;
+        }
+        const groups = await client.query(`SELECT group_id
+       FROM user_pack_groups
+       WHERE pack_id = $1
+       ORDER BY group_id`, [packId]);
+        return (groups.rows ?? [])
+            .map((raw) => Number(asRow(raw).group_id))
+            .filter((id) => Number.isFinite(id) && id > 0);
     });
 }
 //# sourceMappingURL=db.js.map

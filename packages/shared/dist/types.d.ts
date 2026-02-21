@@ -1,6 +1,7 @@
 export declare const QUEUE_NAMES: {
     readonly PROCESS_GROUP: "process-group";
     readonly VK_RED_POSTS: "vk-red-posts";
+    readonly VK_RED_COMMENTS: "vk-red-comments";
 };
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
 export interface RedPostsJobData {
@@ -19,6 +20,16 @@ export interface VkRedPostJobPayload {
     findText: string;
     replaceText: string;
     cutoffDays: number;
+    vkAccessToken: string;
+}
+export interface VkRedCommentsJobPayload {
+    taskId: string;
+    requestedBy: number;
+    totalGroups: number;
+    groupId: number;
+    postTextFragment: string;
+    oldCommentFragment: string;
+    newCommentText: string;
     vkAccessToken: string;
 }
 export interface VkRedPostJobResult {
@@ -50,6 +61,21 @@ export interface RedPostsTask {
     cutoffDays: number;
     vkAccessToken: string;
     createdAt: string;
+}
+export interface RedCommentsTask {
+    taskId: string;
+    requestedBy: number;
+    groupIds: number[];
+    postTextFragment: string;
+    oldCommentFragment: string;
+    newCommentText: string;
+    vkAccessToken: string;
+    createdAt: string;
+}
+export interface VkWallComment {
+    id: number;
+    text?: string;
+    from_id?: number;
 }
 export interface AppEnv {
     tgBotToken: string;

@@ -5,6 +5,8 @@ function createStateService() {
     const authorizedUsers = new Map();
     const pendingAuthUsers = new Map();
     const redPostsState = new Map();
+    const addPackState = new Map();
+    const redCommentsState = new Map();
     return {
         authorize(userId) {
             authorizedUsers.set(userId, true);
@@ -30,6 +32,24 @@ function createStateService() {
         },
         clearRedPostsState(userId) {
             redPostsState.delete(userId);
+        },
+        getAddPackState(userId) {
+            return addPackState.get(userId);
+        },
+        setAddPackState(userId, state) {
+            addPackState.set(userId, state);
+        },
+        clearAddPackState(userId) {
+            addPackState.delete(userId);
+        },
+        getRedCommentsState(userId) {
+            return redCommentsState.get(userId);
+        },
+        setRedCommentsState(userId, state) {
+            redCommentsState.set(userId, state);
+        },
+        clearRedCommentsState(userId) {
+            redCommentsState.delete(userId);
         }
     };
 }

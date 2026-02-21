@@ -11,6 +11,15 @@ export interface VkAccessTokenRecord {
     telegramUserId: number;
     accessToken: string;
     expiresAt: Date | null;
+    updatedAt: Date | null;
 }
 export declare function upsertVkAccessToken(databaseUrl: string, input: UpsertVkAccessTokenInput): Promise<void>;
 export declare function getVkAccessTokenByTelegramUserId(databaseUrl: string, telegramUserId: number): Promise<VkAccessTokenRecord | null>;
+export interface UserPackSummary {
+    id: number;
+    name: string;
+    groupsCount: number;
+}
+export declare function createUserPack(databaseUrl: string, telegramUserId: number, name: string, groupIds: number[]): Promise<number>;
+export declare function listUserPacks(databaseUrl: string, telegramUserId: number): Promise<UserPackSummary[]>;
+export declare function getUserPackGroupIds(databaseUrl: string, telegramUserId: number, packId: number): Promise<number[] | null>;

@@ -25,6 +25,9 @@ function createQueueService(redisUrl, logger) {
     const queue = new bullmq_1.Queue(shared_1.QUEUE_NAMES.VK_RED_POSTS, {
         connection
     });
+    const commentsQueue = new bullmq_1.Queue(shared_1.QUEUE_NAMES.VK_RED_COMMENTS, {
+        connection
+    });
     return {
         async enqueueRedPostsJobs(task) {
             await Promise.all(task.groupIds.map((groupId) => queue.add("vk-red-posts-public", {
@@ -41,6 +44,23 @@ function createQueueService(redisUrl, logger) {
                 removeOnFail: 100
             })));
             logger.info({ taskId: task.taskId, groups: task.groupIds.length }, "BullMQ jobs created");
+            return task.groupIds.length;
+        },
+        async enqueueRedCommentsJobs(task) {
+            await Promise.all(task.groupIds.map((groupId) => commentsQueue.add("vk-red-comments-public", {
+                taskId: task.taskId,
+                requestedBy: task.requestedBy,
+                totalGroups: task.groupIds.length,
+                groupId,
+                postTextFragment: task.postTextFragment,
+                oldCommentFragment: task.oldCommentFragment,
+                newCommentText: task.newCommentText,
+                vkAccessToken: task.vkAccessToken
+            }, {
+                removeOnComplete: true,
+                removeOnFail: 100
+            })));
+            logger.info({ taskId: task.taskId, groups: task.groupIds.length }, "BullMQ comment jobs created");
             return task.groupIds.length;
         }
     };

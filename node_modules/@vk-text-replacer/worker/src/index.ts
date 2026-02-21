@@ -4,9 +4,11 @@ import {
   createLogger,
   ensureDatabaseSchema,
   getEnv,
+  type VkRedCommentsJobPayload,
   type VkRedPostJobPayload,
   type VkRedPostJobResult
 } from "@vk-text-replacer/shared";
+import { processCommentsJob } from "./jobs/processComments.job";
 import { processGroupJob } from "./jobs/processGroup.job";
 import { createVkService } from "./services/vk.service";
 import { createRateLimitService } from "./services/rateLimit.service";
@@ -94,7 +96,7 @@ async function bootstrap(): Promise<void> {
     }
   }
 
-  const worker = new Worker<VkRedPostJobPayload, VkRedPostJobResult>(
+  const postWorker = new Worker<VkRedPostJobPayload, VkRedPostJobResult>(
     QUEUE_NAMES.VK_RED_POSTS,
     async (job) => {
       return processGroupJob(job, {
@@ -109,7 +111,24 @@ async function bootstrap(): Promise<void> {
     }
   );
 
-  worker.on("completed", (job, result) => {
+  const commentsWorker = new Worker<VkRedCommentsJobPayload, VkRedPostJobResult>(
+    QUEUE_NAMES.VK_RED_COMMENTS,
+    async (job) => {
+      return processCommentsJob(job, {
+        logger,
+        vkService
+      });
+    },
+    {
+      connection,
+      concurrency: env.workerConcurrency
+    }
+  );
+
+  function handleCompleted(
+    job: { id?: string | number | undefined; data: { requestedBy: number; totalGroups?: number } },
+    result: VkRedPostJobResult
+  ): void {
     logger.info({ jobId: job.id, result }, "Worker job completed");
 
     const current = taskStats.get(result.taskId) ?? {
@@ -131,9 +150,12 @@ async function bootstrap(): Promise<void> {
     taskStats.set(result.taskId, current);
 
     void flushTaskSummary(result.taskId);
-  });
+  }
 
-  worker.on("failed", (job, err) => {
+  function handleFailed(
+    job: { id?: string | number | undefined; data: { taskId: string; requestedBy: number; totalGroups?: number } } | undefined,
+    err: unknown
+  ): void {
     logger.error({ jobId: job?.id, err }, "Worker job failed");
 
     if (!job) {
@@ -158,11 +180,17 @@ async function bootstrap(): Promise<void> {
     taskStats.set(taskId, current);
 
     void flushTaskSummary(taskId);
-  });
+  }
+
+  postWorker.on("completed", (job, result) => handleCompleted(job, result));
+  commentsWorker.on("completed", (job, result) => handleCompleted(job, result));
+  postWorker.on("failed", (job, err) => handleFailed(job, err));
+  commentsWorker.on("failed", (job, err) => handleFailed(job, err));
 
   logger.info(
     {
       queue: QUEUE_NAMES.VK_RED_POSTS,
+      commentsQueue: QUEUE_NAMES.VK_RED_COMMENTS,
       workerConcurrency: env.workerConcurrency,
       vkRps: env.vkRps
     },
