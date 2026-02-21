@@ -47,7 +47,6 @@ async function bootstrap(): Promise<void> {
 
   const vkService = createVkService({
     apiVersion: env.vkApiVersion,
-    tokensByGroupId: env.vkTokens,
     logger,
     rateLimitService
   });

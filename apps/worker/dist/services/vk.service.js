@@ -35,8 +35,6 @@ function toAttachmentRef(value) {
             access_key: typeof candidate.access_key === "string" ? candidate.access_key : undefined
         };
     }
-    // vk-io wall attachment shape may keep ids inside nested typed object:
-    // { photo: { owner_id, id, access_key } } etc.
     for (const [type, raw] of Object.entries(candidate)) {
         if (!raw || typeof raw !== "object") {
             continue;
@@ -90,28 +88,27 @@ function isRetryableError(error) {
         name.includes("fetcherror"));
 }
 function createVkService(options) {
-    const apiByGroupId = new Map();
-    for (const [groupIdRaw, token] of Object.entries(options.tokensByGroupId)) {
-        const groupId = Number(groupIdRaw);
-        if (!Number.isFinite(groupId) || groupId <= 0) {
-            continue;
+    const apiByToken = new Map();
+    function getApiForToken(vkAccessToken) {
+        const cached = apiByToken.get(vkAccessToken);
+        if (cached) {
+            return cached;
         }
-        apiByGroupId.set(groupId, new vk_io_1.API({
-            token,
+        const api = new vk_io_1.API({
+            token: vkAccessToken,
             apiVersion: options.apiVersion
-        }));
+        });
+        apiByToken.set(vkAccessToken, api);
+        return api;
     }
-    async function callWithRetry(groupId, operationName, fn) {
-        const api = apiByGroupId.get(groupId);
-        if (!api) {
-            throw new Error(`VK token is missing for groupId=${groupId}`);
-        }
+    async function callWithRetry(vkAccessToken, groupId, operationName, fn) {
         let attempt = 0;
         const maxAttempts = 3;
         while (attempt < maxAttempts) {
             attempt += 1;
             await options.rateLimitService.wait();
             try {
+                const api = getApiForToken(vkAccessToken);
                 return await fn(api);
             }
             catch (error) {
@@ -126,9 +123,9 @@ function createVkService(options) {
         throw new Error(`VK call failed after retries: ${operationName}`);
     }
     return {
-        async getWallPostsPage(groupId, offset, count) {
+        async getWallPostsPage(vkAccessToken, groupId, offset, count) {
             const ownerId = -Math.abs(groupId);
-            const response = await callWithRetry(groupId, "wall.get", (api) => api.wall.get({
+            const response = await callWithRetry(vkAccessToken, groupId, "wall.get", (api) => api.wall.get({
                 owner_id: ownerId,
                 offset,
                 count
@@ -138,7 +135,7 @@ function createVkService(options) {
         },
         async editWallPost(args) {
             const ownerId = -Math.abs(args.groupId);
-            await callWithRetry(args.groupId, "wall.edit", (api) => api.wall.edit({
+            await callWithRetry(args.vkAccessToken, args.groupId, "wall.edit", (api) => api.wall.edit({
                 owner_id: ownerId,
                 post_id: args.postId,
                 message: args.message,

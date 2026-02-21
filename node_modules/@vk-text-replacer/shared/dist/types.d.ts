@@ -19,6 +19,7 @@ export interface VkRedPostJobPayload {
     findText: string;
     replaceText: string;
     cutoffDays: number;
+    vkAccessToken: string;
 }
 export interface VkRedPostJobResult {
     taskId: string;
@@ -47,14 +48,13 @@ export interface RedPostsTask {
     findText: string;
     replaceText: string;
     cutoffDays: number;
+    vkAccessToken: string;
     createdAt: string;
 }
 export interface AppEnv {
     tgBotToken: string;
-    adminKey: string;
     databaseUrl: string;
     redisUrl: string;
-    vkTokens: Record<string, string>;
     vkApiVersion: string;
     workerConcurrency: number;
     vkRps: number;

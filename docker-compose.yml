@@ -26,6 +26,9 @@ services:
     command: sh -c "npm install && npm --prefix apps/tg-bot run dev"
     volumes:
       - ./:/app
+      - tg_bot_node_modules:/app/node_modules
+    ports:
+      - "${OAUTH_LISTEN_PORT:-8080}:${OAUTH_LISTEN_PORT:-8080}"
     depends_on:
       - postgres
       - redis
@@ -39,9 +42,12 @@ services:
     command: sh -c "npm install && npm --prefix apps/worker run dev"
     volumes:
       - ./:/app
+      - worker_node_modules:/app/node_modules
     depends_on:
       - postgres
       - redis
 
 volumes:
   postgres_data:
+  tg_bot_node_modules:
+  worker_node_modules:

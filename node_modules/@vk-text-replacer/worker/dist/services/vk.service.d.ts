@@ -3,13 +3,13 @@ import type { RateLimitService } from "./rateLimit.service";
 import type { VkWallPost } from "@vk-text-replacer/shared";
 interface VkServiceOptions {
     apiVersion: string;
-    tokensByGroupId: Record<string, string>;
     logger: Logger;
     rateLimitService: RateLimitService;
 }
 export interface VkService {
-    getWallPostsPage(groupId: number, offset: number, count: number): Promise<VkWallPost[]>;
+    getWallPostsPage(vkAccessToken: string, groupId: number, offset: number, count: number): Promise<VkWallPost[]>;
     editWallPost(args: {
+        vkAccessToken: string;
         groupId: number;
         postId: number;
         message: string;

@@ -4,6 +4,7 @@ import type { QueueService } from "../services/queue.service";
 import type { API } from "vk-io";
 import type { StateService } from "../services/state.service";
 interface RedPostsFlowOptions {
+    databaseUrl: string;
     queueService: QueueService;
     logger: Logger;
     state: StateService;

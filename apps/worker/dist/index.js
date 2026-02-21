@@ -39,7 +39,6 @@ async function bootstrap() {
     const rateLimitService = (0, rateLimit_service_1.createRateLimitService)(env.vkRps);
     const vkService = (0, vk_service_1.createVkService)({
         apiVersion: env.vkApiVersion,
-        tokensByGroupId: env.vkTokens,
         logger,
         rateLimitService
     });

@@ -1,13 +1,13 @@
-import { Bot } from "grammy";
+﻿import { Bot } from "grammy";
 import { createLogger, ensureDatabaseSchema, getEnv } from "@vk-text-replacer/shared";
 import { createQueueService } from "./services/queue.service";
 import { registerAuthFlow } from "./flows/auth.flow";
 import { registerRedPostsFlow } from "./flows/redPosts.flow";
 import { registerBaseHandlers } from "./services/telegram.service";
 import { createStateService } from "./services/state.service";
-import { API } from "vk-io";
 import dotenv from "dotenv";
 import path from "node:path";
+
 const rootEnvPath = path.resolve(__dirname, "../../../.env");
 dotenv.config({ path: rootEnvPath, override: true });
 
@@ -25,17 +25,15 @@ async function bootstrap(): Promise<void> {
   const bot = new Bot(env.tgBotToken);
   const queueService = createQueueService(env.redisUrl, logger);
   const state = createStateService();
-  const firstVkToken = Object.values(env.vkTokens)[0] ?? "";
-  const vkApi = firstVkToken
-    ? new API({
-        token: firstVkToken,
-        apiVersion: env.vkApiVersion
-      })
-    : null;
+  const vkApi = null;
 
   registerBaseHandlers(bot, { logger, state });
-  registerAuthFlow(bot, { adminKey: env.adminKey, logger, state });
-  registerRedPostsFlow(bot, { queueService, logger, state, vkApi });
+  registerAuthFlow(bot, {
+    databaseUrl: env.databaseUrl,
+    logger,
+    state
+  });
+  registerRedPostsFlow(bot, { databaseUrl: env.databaseUrl, queueService, logger, state, vkApi });
 
   await bot.start({
     onStart: (botInfo) => logger.info({ username: botInfo.username }, "Telegram bot started")

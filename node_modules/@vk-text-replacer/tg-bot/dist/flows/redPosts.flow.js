@@ -4,6 +4,32 @@ exports.registerRedPostsFlow = registerRedPostsFlow;
 const parsePublicLinks_1 = require("../utils/parsePublicLinks");
 const textNormalize_1 = require("../utils/textNormalize");
 const node_crypto_1 = require("node:crypto");
+const shared_1 = require("@vk-text-replacer/shared");
+function parseVkTokenInput(raw) {
+    const input = raw.trim();
+    if (!input) {
+        return null;
+    }
+    if (input.startsWith("vk1.") || input.startsWith("vk2.")) {
+        return { accessToken: input, expiresAt: null };
+    }
+    try {
+        const url = new URL(input);
+        const hash = url.hash.startsWith("#") ? url.hash.slice(1) : url.hash;
+        const hashParams = new URLSearchParams(hash);
+        const accessToken = (hashParams.get("access_token") ?? "").trim();
+        if (!accessToken) {
+            return null;
+        }
+        const expiresInRaw = (hashParams.get("expires_in") ?? "").trim();
+        const expiresIn = Number(expiresInRaw);
+        const expiresAt = Number.isFinite(expiresIn) && expiresIn > 0 ? new Date(Date.now() + expiresIn * 1000) : null;
+        return { accessToken, expiresAt };
+    }
+    catch {
+        return null;
+    }
+}
 function registerRedPostsFlow(bot, options) {
     bot.command("red_posts", async (ctx) => {
         const userId = ctx.from?.id;
@@ -11,13 +37,18 @@ function registerRedPostsFlow(bot, options) {
             return;
         }
         options.state.setRedPostsState(userId, {
-            step: "await_links",
+            step: "await_token",
             rawLinks: [],
             groupIds: [],
             findText: "",
+            vkAccessToken: "",
             skippedLinks: []
         });
-        await ctx.reply("Введите ссылки на паблики, каждая с новой строки:");
+        await ctx.reply([
+            "1) Перейдите: https://vkhost.github.io/",
+            "2) Выберите VK Admin и выдайте доступ",
+            "3) Скопируйте адресную строку вида https://oauth.vk.com/blank.html#access_token=... и пришлите сюда"
+        ].join("\n"));
     });
     bot.command("cancel", async (ctx) => {
         const userId = ctx.from?.id;
@@ -41,6 +72,25 @@ function registerRedPostsFlow(bot, options) {
         const text = (ctx.message.text ?? "").trim();
         if (!text || text.startsWith("/")) {
             await next();
+            return;
+        }
+        if (state.step === "await_token") {
+            const parsedToken = parseVkTokenInput(text);
+            if (!parsedToken) {
+                await ctx.reply("Не удалось извлечь access_token. Пришлите полную ссылку из адресной строки после авторизации.");
+                return;
+            }
+            await (0, shared_1.upsertVkAccessToken)(options.databaseUrl, {
+                telegramUserId: userId,
+                accessToken: parsedToken.accessToken,
+                expiresAt: parsedToken.expiresAt
+            });
+            options.state.setRedPostsState(userId, {
+                ...state,
+                step: "await_links",
+                vkAccessToken: parsedToken.accessToken
+            });
+            await ctx.reply("Токен сохранен. Введите ссылки на паблики, каждая с новой строки:");
             return;
         }
         if (state.step === "await_links") {
@@ -97,6 +147,7 @@ function registerRedPostsFlow(bot, options) {
             findText: state.findText,
             replaceText,
             cutoffDays: 4,
+            vkAccessToken: state.vkAccessToken,
             createdAt: new Date().toISOString()
         };
         const jobsCount = await options.queueService.enqueueRedPostsJobs(task);

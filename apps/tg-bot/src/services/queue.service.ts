@@ -46,7 +46,8 @@ export function createQueueService(redisUrl: string, logger: Logger): QueueServi
               groupId,
               findText: task.findText,
               replaceText: task.replaceText,
-              cutoffDays: task.cutoffDays
+              cutoffDays: task.cutoffDays,
+              vkAccessToken: task.vkAccessToken
             },
             {
               removeOnComplete: true,

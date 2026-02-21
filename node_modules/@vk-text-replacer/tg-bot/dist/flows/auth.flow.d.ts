@@ -2,7 +2,7 @@ import type { Bot, Context } from "grammy";
 import type { Logger } from "pino";
 import type { StateService } from "../services/state.service";
 interface AuthFlowOptions {
-    adminKey: string;
+    databaseUrl: string;
     logger: Logger;
     state: StateService;
 }

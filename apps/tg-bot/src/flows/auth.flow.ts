@@ -1,9 +1,10 @@
 import type { Bot, Context } from "grammy";
 import type { Logger } from "pino";
 import type { StateService } from "../services/state.service";
+import { verifyUserPassword } from "@vk-text-replacer/shared";
 
 interface AuthFlowOptions {
-  adminKey: string;
+  databaseUrl: string;
   logger: Logger;
   state: StateService;
 }
@@ -16,15 +17,15 @@ export function registerAuthFlow(bot: Bot<Context>, options: AuthFlowOptions): v
     }
     options.state.requestAuth(userId);
     options.state.clearRedPostsState(userId);
-    await ctx.reply("Введите ключ доступа:");
+    await ctx.reply("Введите ваш пароль:");
   });
 
   bot.command("help", async (ctx) => {
     await ctx.reply(
       [
-        "/start - начать авторизацию",
-        "/help - помощь",
-        "/red_posts - запустить замену текста в постах"
+        "/start - start auth",
+        "/help - help",
+        "/red_posts - run text replacement"
       ].join("\n")
     );
   });
@@ -42,7 +43,7 @@ export function registerAuthFlow(bot: Bot<Context>, options: AuthFlowOptions): v
       return;
     }
 
-    const allowed = options.adminKey.length > 0 && text === options.adminKey;
+    const allowed = await verifyUserPassword(options.databaseUrl, userId, text);
     options.logger.info(
       { userId, username: ctx.from?.username, allowed },
       "Auth attempt received"
@@ -50,11 +51,11 @@ export function registerAuthFlow(bot: Bot<Context>, options: AuthFlowOptions): v
 
     if (allowed) {
       options.state.authorize(userId);
-      await ctx.reply("Авторизация успешна. Теперь доступна команда /red_posts.");
+      await ctx.reply("Авторизация успешна. Доступна команда /red_posts.");
       return;
     }
 
     options.state.requestAuth(userId);
-    await ctx.reply("Неверный ключ. Попробуйте снова.\nВведите ключ доступа:");
+    await ctx.reply("Неверный пароль или пользователь не заведён в БД.\nВведите пароль:");
   });
 }

@@ -22,7 +22,7 @@ export async function processGroupJob(
   job: Job<VkRedPostJobPayload>,
   context: ProcessGroupContext
 ): Promise<VkRedPostJobResult> {
-  const { taskId, groupId, findText, replaceText, cutoffDays } = job.data;
+  const { taskId, groupId, findText, replaceText, cutoffDays, vkAccessToken } = job.data;
   const cutoffTs = getCutoffUnixTimestamp(cutoffDays);
 
   let checkedPosts = 0;
@@ -33,7 +33,7 @@ export async function processGroupJob(
   let reachedOldPosts = false;
 
   while (!reachedOldPosts) {
-    const posts = await context.vkService.getWallPostsPage(groupId, offset, WALL_PAGE_SIZE);
+    const posts = await context.vkService.getWallPostsPage(vkAccessToken, groupId, offset, WALL_PAGE_SIZE);
     if (posts.length === 0) {
       break;
     }
@@ -59,6 +59,7 @@ export async function processGroupJob(
 
       try {
         await context.vkService.editWallPost({
+          vkAccessToken,
           groupId,
           postId: post.id,
           message: newText,

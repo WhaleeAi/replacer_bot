@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerAuthFlow = registerAuthFlow;
+const shared_1 = require("@vk-text-replacer/shared");
 function registerAuthFlow(bot, options) {
     bot.command("start", async (ctx) => {
         const userId = ctx.from?.id;
@@ -9,13 +10,13 @@ function registerAuthFlow(bot, options) {
         }
         options.state.requestAuth(userId);
         options.state.clearRedPostsState(userId);
-        await ctx.reply("Введите ключ доступа:");
+        await ctx.reply("Введите ваш пароль:");
     });
     bot.command("help", async (ctx) => {
         await ctx.reply([
-            "/start - начать авторизацию",
-            "/help - помощь",
-            "/red_posts - запустить замену текста в постах"
+            "/start - start auth",
+            "/help - help",
+            "/red_posts - run text replacement"
         ].join("\n"));
     });
     bot.on("message:text", async (ctx, next) => {
@@ -29,15 +30,15 @@ function registerAuthFlow(bot, options) {
             await next();
             return;
         }
-        const allowed = options.adminKey.length > 0 && text === options.adminKey;
+        const allowed = await (0, shared_1.verifyUserPassword)(options.databaseUrl, userId, text);
         options.logger.info({ userId, username: ctx.from?.username, allowed }, "Auth attempt received");
         if (allowed) {
             options.state.authorize(userId);
-            await ctx.reply("Авторизация успешна. Теперь доступна команда /red_posts.");
+            await ctx.reply("Авторизация успешна. Доступна команда /red_posts.");
             return;
         }
         options.state.requestAuth(userId);
-        await ctx.reply("Неверный ключ. Попробуйте снова.\nВведите ключ доступа:");
+        await ctx.reply("Неверный пароль или пользователь не заведён в БД.\nВведите пароль:");
     });
 }
 //# sourceMappingURL=auth.flow.js.map

@@ -20,7 +20,7 @@ function registerBaseHandlers(bot, options) {
         }
         const userId = ctx.from?.id;
         if (!userId || !options.state.isAuthorized(userId)) {
-            await ctx.reply("Требуется авторизация. Нажмите /start и введите ключ доступа.");
+            await ctx.reply("Требуется авторизация. Нажмите /start и введите пароль.");
             return;
         }
         await next();

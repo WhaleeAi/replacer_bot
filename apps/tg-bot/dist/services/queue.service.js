@@ -34,7 +34,8 @@ function createQueueService(redisUrl, logger) {
                 groupId,
                 findText: task.findText,
                 replaceText: task.replaceText,
-                cutoffDays: task.cutoffDays
+                cutoffDays: task.cutoffDays,
+                vkAccessToken: task.vkAccessToken
             }, {
                 removeOnComplete: true,
                 removeOnFail: 100

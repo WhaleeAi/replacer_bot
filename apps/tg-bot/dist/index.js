@@ -10,7 +10,6 @@ const auth_flow_1 = require("./flows/auth.flow");
 const redPosts_flow_1 = require("./flows/redPosts.flow");
 const telegram_service_1 = require("./services/telegram.service");
 const state_service_1 = require("./services/state.service");
-const vk_io_1 = require("vk-io");
 const dotenv_1 = __importDefault(require("dotenv"));
 const node_path_1 = __importDefault(require("node:path"));
 const rootEnvPath = node_path_1.default.resolve(__dirname, "../../../.env");
@@ -26,16 +25,14 @@ async function bootstrap() {
     const bot = new grammy_1.Bot(env.tgBotToken);
     const queueService = (0, queue_service_1.createQueueService)(env.redisUrl, logger);
     const state = (0, state_service_1.createStateService)();
-    const firstVkToken = Object.values(env.vkTokens)[0] ?? "";
-    const vkApi = firstVkToken
-        ? new vk_io_1.API({
-            token: firstVkToken,
-            apiVersion: env.vkApiVersion
-        })
-        : null;
+    const vkApi = null;
     (0, telegram_service_1.registerBaseHandlers)(bot, { logger, state });
-    (0, auth_flow_1.registerAuthFlow)(bot, { adminKey: env.adminKey, logger, state });
-    (0, redPosts_flow_1.registerRedPostsFlow)(bot, { queueService, logger, state, vkApi });
+    (0, auth_flow_1.registerAuthFlow)(bot, {
+        databaseUrl: env.databaseUrl,
+        logger,
+        state
+    });
+    (0, redPosts_flow_1.registerRedPostsFlow)(bot, { databaseUrl: env.databaseUrl, queueService, logger, state, vkApi });
     await bot.start({
         onStart: (botInfo) => logger.info({ username: botInfo.username }, "Telegram bot started")
     });

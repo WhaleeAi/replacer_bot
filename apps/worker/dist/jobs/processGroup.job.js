@@ -8,7 +8,7 @@ function shouldProcessPost(post, cutoffTs) {
     return Number(post.date) >= cutoffTs;
 }
 async function processGroupJob(job, context) {
-    const { taskId, groupId, findText, replaceText, cutoffDays } = job.data;
+    const { taskId, groupId, findText, replaceText, cutoffDays, vkAccessToken } = job.data;
     const cutoffTs = (0, cutoff_1.getCutoffUnixTimestamp)(cutoffDays);
     let checkedPosts = 0;
     let editedPosts = 0;
@@ -17,7 +17,7 @@ async function processGroupJob(job, context) {
     let offset = 0;
     let reachedOldPosts = false;
     while (!reachedOldPosts) {
-        const posts = await context.vkService.getWallPostsPage(groupId, offset, WALL_PAGE_SIZE);
+        const posts = await context.vkService.getWallPostsPage(vkAccessToken, groupId, offset, WALL_PAGE_SIZE);
         if (posts.length === 0) {
             break;
         }
@@ -39,6 +39,7 @@ async function processGroupJob(job, context) {
             }
             try {
                 await context.vkService.editWallPost({
+                    vkAccessToken,
                     groupId,
                     postId: post.id,
                     message: newText,

@@ -1,10 +1,11 @@
-export type RedPostsStep = "await_links" | "await_find" | "await_replace";
+export type RedPostsStep = "await_token" | "await_links" | "await_find" | "await_replace";
 
 export interface RedPostsDialogState {
   step: RedPostsStep;
   rawLinks: string[];
   groupIds: number[];
   findText: string;
+  vkAccessToken: string;
   skippedLinks: string[];
 }
 

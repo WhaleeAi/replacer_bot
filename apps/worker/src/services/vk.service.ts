@@ -5,14 +5,14 @@ import type { VkWallAttachmentRef, VkWallPost } from "@vk-text-replacer/shared";
 
 interface VkServiceOptions {
   apiVersion: string;
-  tokensByGroupId: Record<string, string>;
   logger: Logger;
   rateLimitService: RateLimitService;
 }
 
 export interface VkService {
-  getWallPostsPage(groupId: number, offset: number, count: number): Promise<VkWallPost[]>;
+  getWallPostsPage(vkAccessToken: string, groupId: number, offset: number, count: number): Promise<VkWallPost[]>;
   editWallPost(args: {
+    vkAccessToken: string;
     groupId: number;
     postId: number;
     message: string;
@@ -69,8 +69,6 @@ function toAttachmentRef(value: unknown): VkWallAttachmentRef | null {
     };
   }
 
-  // vk-io wall attachment shape may keep ids inside nested typed object:
-  // { photo: { owner_id, id, access_key } } etc.
   for (const [type, raw] of Object.entries(candidate)) {
     if (!raw || typeof raw !== "object") {
       continue;
@@ -150,38 +148,35 @@ function isRetryableError(error: unknown): boolean {
 }
 
 export function createVkService(options: VkServiceOptions): VkService {
-  const apiByGroupId = new Map<number, API>();
+  const apiByToken = new Map<string, API>();
 
-  for (const [groupIdRaw, token] of Object.entries(options.tokensByGroupId)) {
-    const groupId = Number(groupIdRaw);
-    if (!Number.isFinite(groupId) || groupId <= 0) {
-      continue;
+  function getApiForToken(vkAccessToken: string): API {
+    const cached = apiByToken.get(vkAccessToken);
+    if (cached) {
+      return cached;
     }
-    apiByGroupId.set(
-      groupId,
-      new API({
-        token,
-        apiVersion: options.apiVersion
-      })
-    );
+
+    const api = new API({
+      token: vkAccessToken,
+      apiVersion: options.apiVersion
+    });
+    apiByToken.set(vkAccessToken, api);
+    return api;
   }
 
   async function callWithRetry<T>(
+    vkAccessToken: string,
     groupId: number,
     operationName: string,
     fn: (api: API) => Promise<T>
   ): Promise<T> {
-    const api = apiByGroupId.get(groupId);
-    if (!api) {
-      throw new Error(`VK token is missing for groupId=${groupId}`);
-    }
-
     let attempt = 0;
     const maxAttempts = 3;
     while (attempt < maxAttempts) {
       attempt += 1;
       await options.rateLimitService.wait();
       try {
+        const api = getApiForToken(vkAccessToken);
         return await fn(api);
       } catch (error) {
         if (!isRetryableError(error) || attempt >= maxAttempts) {
@@ -200,9 +195,9 @@ export function createVkService(options: VkServiceOptions): VkService {
   }
 
   return {
-    async getWallPostsPage(groupId: number, offset: number, count: number): Promise<VkWallPost[]> {
+    async getWallPostsPage(vkAccessToken: string, groupId: number, offset: number, count: number): Promise<VkWallPost[]> {
       const ownerId = -Math.abs(groupId);
-      const response = await callWithRetry(groupId, "wall.get", (api) =>
+      const response = await callWithRetry(vkAccessToken, groupId, "wall.get", (api) =>
         api.wall.get({
           owner_id: ownerId,
           offset,
@@ -215,7 +210,7 @@ export function createVkService(options: VkServiceOptions): VkService {
 
     async editWallPost(args): Promise<void> {
       const ownerId = -Math.abs(args.groupId);
-      await callWithRetry(args.groupId, "wall.edit", (api) =>
+      await callWithRetry(args.vkAccessToken, args.groupId, "wall.edit", (api) =>
         api.wall.edit({
           owner_id: ownerId,
           post_id: args.postId,
