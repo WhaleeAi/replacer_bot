@@ -14,7 +14,7 @@ function formatRequestText(ctx, requesterId) {
     const lastName = ctx.from?.last_name ?? "";
     const fullName = `${firstName} ${lastName}`.trim() || "(no name)";
     return [
-        "New access request",
+        "Новый запрос на доступ к боту:",
         `user_id: ${requesterId}`,
         `username: ${username}`,
         `name: ${fullName}`
@@ -42,7 +42,7 @@ function registerAuthFlow(bot, options) {
             await ctx.api.sendMessage(options.adminTgUserId, formatRequestText(ctx, userId), {
                 reply_markup: buildApprovalKeyboard(userId)
             });
-            await ctx.reply("Access request sent to admin. Wait for approval.");
+            await ctx.reply("Отправили запрос админу, дождитесь одобрения.");
         }
         catch (error) {
             options.logger.error({ err: error, userId }, "Failed to send access request to admin");
@@ -72,7 +72,7 @@ function registerAuthFlow(bot, options) {
         options.logger.info({ requestedUserId, adminId: ctx.from.id }, "User approved");
         await ctx.answerCallbackQuery({ text: "Approved" });
         try {
-            await ctx.api.sendMessage(requestedUserId, "Access approved. You can now use bot commands.");
+            await ctx.api.sendMessage(requestedUserId, "Доступ одобрен. Теперь вы можете использовать команды бота (/help).");
         }
         catch (error) {
             options.logger.warn({ err: error, requestedUserId }, "Failed to notify approved user");

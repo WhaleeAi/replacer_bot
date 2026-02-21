@@ -26,7 +26,7 @@ export function registerAddPackFlow(bot: Bot<Context>, options: AddPackFlowOptio
       name: ""
     });
 
-    await ctx.reply("Send pack name:");
+    await ctx.reply("Назовите пак:");
   });
 
   bot.on("message:text", async (ctx, next) => {

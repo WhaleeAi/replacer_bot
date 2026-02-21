@@ -15,7 +15,7 @@ function registerAddPackFlow(bot, options) {
             step: "await_name",
             name: ""
         });
-        await ctx.reply("Send pack name:");
+        await ctx.reply("Назовите пак:");
     });
     bot.on("message:text", async (ctx, next) => {
         const userId = ctx.from?.id;
