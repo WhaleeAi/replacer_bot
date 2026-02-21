@@ -32,6 +32,7 @@ async function bootstrap(): Promise<void> {
   registerBaseHandlers(bot, { databaseUrl: env.databaseUrl, logger, state });
   registerAuthFlow(bot, {
     databaseUrl: env.databaseUrl,
+    adminTgUserId: env.adminTgUserId,
     logger,
     state
   });

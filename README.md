@@ -43,13 +43,14 @@ Services:
 ## Environment variables
 
 - `TG_BOT_TOKEN` - Telegram bot token from BotFather.
+- `ADMIN_TG_USER_ID` - Telegram user id of admin who approves access requests.
 - `DATABASE_URL` - PostgreSQL URL, for example `postgres://postgres:postgres@localhost:5432/replacer_bot`.
 - `REDIS_URL` - Redis URL, for example `redis://redis:6379`.
 - `VK_API_VERSION` - VK API version, for example `5.131`.
 - `WORKER_CONCURRENCY` - worker concurrency, for example `3`.
 - `VK_RPS` - VK API requests per second limit, for example `3`.
 
-User authorization is checked by per-user password from PostgreSQL (`users.auth_password`).
+User authorization is granted by admin approval. Bot checks access by presence of `telegram_user_id` in `users`.
 
 ## What this prototype already includes
 

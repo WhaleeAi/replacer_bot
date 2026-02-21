@@ -5,9 +5,15 @@ function parseNumber(input: string | undefined, fallback: number): number {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function parseOptionalNumber(input: string | undefined): number {
+  const value = Number(input);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
 export function getEnv(): AppEnv {
   return {
     tgBotToken: process.env.TG_BOT_TOKEN ?? "",
+    adminTgUserId: parseOptionalNumber(process.env.ADMIN_TG_USER_ID),
     databaseUrl: process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/replacer_bot",
     redisUrl: process.env.REDIS_URL ?? "redis://localhost:6379",
     vkApiVersion: process.env.VK_API_VERSION ?? "5.131",

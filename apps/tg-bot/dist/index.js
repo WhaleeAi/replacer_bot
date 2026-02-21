@@ -31,6 +31,7 @@ async function bootstrap() {
     (0, telegram_service_1.registerBaseHandlers)(bot, { databaseUrl: env.databaseUrl, logger, state });
     (0, auth_flow_1.registerAuthFlow)(bot, {
         databaseUrl: env.databaseUrl,
+        adminTgUserId: env.adminTgUserId,
         logger,
         state
     });

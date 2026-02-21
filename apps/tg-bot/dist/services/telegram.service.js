@@ -21,18 +21,18 @@ function registerBaseHandlers(bot, options) {
         }
         const userId = ctx.from?.id;
         if (!userId) {
-            await ctx.reply("Требуется авторизация. Нажмите /start и введите пароль.");
+            await ctx.reply("Access required. Use /start to request access.");
             return;
         }
         let allowed = options.state.isAuthorized(userId);
         if (!allowed) {
-            allowed = await (0, shared_1.isUserAuthGranted)(options.databaseUrl, userId);
+            allowed = await (0, shared_1.isUserRegistered)(options.databaseUrl, userId);
             if (allowed) {
                 options.state.authorize(userId);
             }
         }
         if (!allowed) {
-            await ctx.reply("Требуется авторизация. Нажмите /start и введите пароль.");
+            await ctx.reply("Access required. Use /start to request access.");
             return;
         }
         await next();

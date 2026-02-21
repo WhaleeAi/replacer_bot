@@ -79,6 +79,7 @@ export interface VkWallComment {
 }
 export interface AppEnv {
     tgBotToken: string;
+    adminTgUserId: number;
     databaseUrl: string;
     redisUrl: string;
     vkApiVersion: string;

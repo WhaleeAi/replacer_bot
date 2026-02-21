@@ -126,7 +126,7 @@ function registerRedPostsFlow(bot, options) {
             skippedLinks: []
         });
         await ctx.answerCallbackQuery({ text: `Pack selected (${groupIds.length})` });
-        await ctx.reply("Pack selected. Now send text to find:");
+        await ctx.reply("Пак выбран. Теперь отправьте текст, который нужно заменить:");
     });
     bot.on("message:text", async (ctx, next) => {
         const userId = ctx.from?.id;
@@ -226,11 +226,12 @@ function registerRedPostsFlow(bot, options) {
         const jobsCount = await options.queueService.enqueueRedPostsJobs(task);
         options.state.clearRedPostsState(userId);
         options.logger.info({
+            taskId: task.taskId,
             requestedBy: task.requestedBy,
             groups: task.groupIds.length
         }, "red_posts task queued");
         await ctx.reply([
-            `Задача принята, групп: ${jobsCount}`,
+            `Task queued: taskId=${task.taskId}, groups=${jobsCount}`,
             state.skippedLinks.length > 0 ? `Skipped links:\n${state.skippedLinks.join("\n")}` : ""
         ]
             .filter(Boolean)

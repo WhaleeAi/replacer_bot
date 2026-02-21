@@ -22,13 +22,11 @@ const SCHEMA_SQL: string[] = [
     id BIGSERIAL PRIMARY KEY,
     telegram_user_id BIGINT NOT NULL UNIQUE,
     vk_user_id BIGINT,
-    auth_password TEXT,
-    auth_granted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
-  `ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_password TEXT`,
-  `ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_granted BOOLEAN NOT NULL DEFAULT FALSE`,
+  `ALTER TABLE users DROP COLUMN IF EXISTS auth_password`,
+  `ALTER TABLE users DROP COLUMN IF EXISTS auth_granted`,
   `CREATE TABLE IF NOT EXISTS vk_tokens (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -106,50 +104,10 @@ async function ensureUserWithClient(client: Queryable, telegramUserId: number): 
   return userId;
 }
 
-export async function verifyUserPassword(
-  databaseUrl: string,
-  telegramUserId: number,
-  password: string
-): Promise<boolean> {
+export async function isUserRegistered(databaseUrl: string, telegramUserId: number): Promise<boolean> {
   return withClient(databaseUrl, async (client) => {
-    const result = await client.query(
-      `SELECT auth_password
-       FROM users
-       WHERE telegram_user_id = $1`,
-      [telegramUserId]
-    );
-    const row = asRow(result.rows?.[0]);
-    const stored = typeof row.auth_password === "string" ? row.auth_password : "";
-    return stored.length > 0 && stored === password;
-  });
-}
-
-export async function setUserAuthGranted(
-  databaseUrl: string,
-  telegramUserId: number,
-  granted: boolean
-): Promise<void> {
-  await withClient(databaseUrl, async (client) => {
-    const userId = await ensureUserWithClient(client, telegramUserId);
-    await client.query(
-      `UPDATE users
-       SET auth_granted = $2, updated_at = NOW()
-       WHERE id = $1`,
-      [userId, granted]
-    );
-  });
-}
-
-export async function isUserAuthGranted(databaseUrl: string, telegramUserId: number): Promise<boolean> {
-  return withClient(databaseUrl, async (client) => {
-    const result = await client.query(
-      `SELECT auth_granted
-       FROM users
-       WHERE telegram_user_id = $1`,
-      [telegramUserId]
-    );
-    const row = asRow(result.rows?.[0]);
-    return Boolean(row.auth_granted);
+    const result = await client.query(`SELECT 1 FROM users WHERE telegram_user_id = $1`, [telegramUserId]);
+    return (result.rows ?? []).length > 0;
   });
 }
 

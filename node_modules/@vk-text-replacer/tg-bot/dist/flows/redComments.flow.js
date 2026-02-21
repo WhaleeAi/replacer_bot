@@ -49,7 +49,7 @@ function buildPacksKeyboard(packs) {
 }
 async function showLinksPrompt(ctx, packs) {
     const keyboard = buildPacksKeyboard(packs);
-    await ctx.reply("Отправьте ссылки на паблики (каждую на новой строке) или выберите пакет ниже:", keyboard ? { reply_markup: keyboard } : undefined);
+    await ctx.reply("Send community links (one per line) or select pack below:", keyboard ? { reply_markup: keyboard } : undefined);
 }
 function registerRedCommentsFlow(bot, options) {
     bot.command("red_comments", async (ctx) => {
@@ -136,7 +136,7 @@ function registerRedCommentsFlow(bot, options) {
         if (state.step === "await_token") {
             const parsedToken = parseVkTokenInput(text);
             if (!parsedToken) {
-                await ctx.reply("Не смог распознать токен. Убедитесь, что вы отправляете полный URL или полный токен:");
+                await ctx.reply("Could not parse access token. Send full callback URL or raw token.");
                 return;
             }
             await (0, shared_1.upsertVkAccessToken)(options.databaseUrl, {
@@ -177,13 +177,13 @@ function registerRedCommentsFlow(bot, options) {
                 groupIds: parsed.groupIds,
                 skippedLinks: parsed.errors
             });
-            await ctx.reply("Отправьте фрагмент текста поста (мы обработаем комментарии под подходящими постами):");
+            await ctx.reply("Send fragment of post text (we will process comments under matching posts):");
             return;
         }
         if (state.step === "await_post_fragment") {
             const value = (0, textNormalize_1.normalizeText)(text);
             if (!value) {
-                await ctx.reply("Фрагмент поста не может быть постым, попробуйте снова:");
+                await ctx.reply("Post text fragment cannot be empty. Send again:");
                 return;
             }
             options.state.setRedCommentsState(userId, {
@@ -191,13 +191,13 @@ function registerRedCommentsFlow(bot, options) {
                 step: "await_old_comment_fragment",
                 postTextFragment: value
             });
-            await ctx.reply("Отправьте фрагмент текста комментария, который нужно удалить (вставим новый):");
+            await ctx.reply("Send fragment of old comment to delete:");
             return;
         }
         if (state.step === "await_old_comment_fragment") {
             const value = (0, textNormalize_1.normalizeText)(text);
             if (!value) {
-                await ctx.reply("Не может быть пустым. Отправьте снова:");
+                await ctx.reply("Old comment fragment cannot be empty. Send again:");
                 return;
             }
             options.state.setRedCommentsState(userId, {
@@ -205,12 +205,12 @@ function registerRedCommentsFlow(bot, options) {
                 step: "await_new_comment_text",
                 oldCommentFragment: value
             });
-            await ctx.reply("Отправьте полный новый текст комментария (мы удалим старый и добавим этот):");
+            await ctx.reply("Send full new comment text:");
             return;
         }
         const newCommentText = (0, textNormalize_1.normalizeText)(text);
         if (!newCommentText) {
-            await ctx.reply("Текст комментария не может быть пустым. Отправьте снова:");
+            await ctx.reply("New comment text cannot be empty. Send again:");
             return;
         }
         const task = {
