@@ -21,7 +21,7 @@ function registerBaseHandlers(bot, options) {
         }
         const userId = ctx.from?.id;
         if (!userId) {
-            await ctx.reply("Требуется доступ. Нажмите /start чтобы отправить запрос.");
+            await ctx.reply("Требуется доступ. Нажмите /start, чтобы отправить запрос.");
             return;
         }
         let allowed = options.state.isAuthorized(userId);
@@ -32,7 +32,7 @@ function registerBaseHandlers(bot, options) {
             }
         }
         if (!allowed) {
-            await ctx.reply("Требуется доступ. Нажмите /start чтобы отправить запрос.");
+            await ctx.reply("Требуется доступ. Нажмите /start, чтобы отправить запрос.");
             return;
         }
         await next();

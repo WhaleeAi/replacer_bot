@@ -50,7 +50,7 @@ function buildPacksKeyboard(packs) {
 }
 async function showLinksPrompt(ctx, packs) {
     const keyboard = buildPacksKeyboard(packs);
-    await ctx.reply("Токен сохранен. Теперь отправьте ссылки на сообщества, по одной в строке, или выберите пак:", keyboard ? { reply_markup: keyboard } : undefined);
+    await ctx.reply("Токен сохранён. Отправьте ссылки на сообщества (по одной в строке) или выберите пак:", keyboard ? { reply_markup: keyboard } : undefined);
 }
 function registerRedPostsFlow(bot, options) {
     bot.command("red_posts", async (ctx) => {
@@ -85,8 +85,8 @@ function registerRedPostsFlow(bot, options) {
         });
         await ctx.reply([
             "1) Перейдите на https://vkhost.github.io/",
-            "2) Выберите VK Admin и нажмите кнопку для получения доступа",
-            "3) Скопируйте адресную строку и отправьте сюда (https://oauth.vk.com/blank.html#access_token=... и тд)"
+            "2) Выберите VK Admin и выдайте доступ",
+            "3) Скопируйте адресную строку и отправьте сюда (https://oauth.vk.com/blank.html#access_token=... и т.д.)"
         ].join("\n"));
     });
     bot.command("cancel", async (ctx) => {
@@ -98,7 +98,7 @@ function registerRedPostsFlow(bot, options) {
         options.state.clearAddPackState(userId);
         options.state.clearPackEditState(userId);
         options.state.clearRedCommentsState(userId);
-        await ctx.reply("Current dialog canceled.");
+        await ctx.reply("Текущий диалог отменён.");
     });
     bot.callbackQuery(/^pack:(\d+)$/, async (ctx) => {
         const userId = ctx.from?.id;
@@ -108,17 +108,17 @@ function registerRedPostsFlow(bot, options) {
         }
         const state = options.state.getRedPostsState(userId);
         if (!state || state.step !== "await_links") {
-            await ctx.answerCallbackQuery({ text: "Start /red_posts first." });
+            await ctx.answerCallbackQuery({ text: "Сначала запустите /red_posts." });
             return;
         }
         const packId = Number(ctx.match?.[1]);
         if (!Number.isFinite(packId) || packId <= 0) {
-            await ctx.answerCallbackQuery({ text: "Invalid pack." });
+            await ctx.answerCallbackQuery({ text: "Некорректный пак." });
             return;
         }
         const groupIds = await (0, shared_1.getUserPackGroupIds)(options.databaseUrl, userId, packId);
         if (!groupIds || groupIds.length === 0) {
-            await ctx.answerCallbackQuery({ text: "Pack is empty or unavailable." });
+            await ctx.answerCallbackQuery({ text: "Пак пустой или недоступен." });
             return;
         }
         options.state.setRedPostsState(userId, {
@@ -128,7 +128,7 @@ function registerRedPostsFlow(bot, options) {
             groupIds,
             skippedLinks: []
         });
-        await ctx.answerCallbackQuery({ text: `Pack selected (${groupIds.length})` });
+        await ctx.answerCallbackQuery({ text: `Пак выбран (${groupIds.length})` });
         await ctx.reply("Пак выбран. Теперь отправьте текст, который нужно заменить:");
     });
     bot.on("message:text", async (ctx, next) => {
@@ -150,7 +150,7 @@ function registerRedPostsFlow(bot, options) {
         if (state.step === "await_token") {
             const parsedToken = parseVkTokenInput(text);
             if (!parsedToken) {
-                await ctx.reply("Could not parse access_token. Send full callback URL or raw token.");
+                await ctx.reply("Не удалось распознать access_token. Отправьте полную callback-ссылку или сам токен.");
                 return;
             }
             await (0, shared_1.upsertVkAccessToken)(options.databaseUrl, {
@@ -181,9 +181,9 @@ function registerRedPostsFlow(bot, options) {
                 const packs = await (0, shared_1.listUserPacks)(options.databaseUrl, userId);
                 const keyboard = buildPacksKeyboard(packs);
                 await ctx.reply([
-                    "Не смог найти валидные ссылки.",
-                    parsed.errors.length > 0 ? `Невалидные:\n${parsed.errors.join("\n")}` : "",
-                    "Попробуйте еще раз или выберите пак:"
+                    "Не удалось обработать ни одной ссылки.",
+                    parsed.errors.length > 0 ? `Невалидные ссылки:\n${parsed.errors.join("\n")}` : "",
+                    "Попробуйте снова или выберите пак:"
                 ]
                     .filter(Boolean)
                     .join("\n\n"), keyboard ? { reply_markup: keyboard } : undefined);
@@ -197,14 +197,14 @@ function registerRedPostsFlow(bot, options) {
                 skippedLinks: parsed.errors
             });
             await ctx.reply(parsed.errors.length > 0
-                ? `Some links were skipped:\n${parsed.errors.join("\n")}\n\nТеперь отправьте текст для замены:`
+                ? `Некоторые ссылки пропущены:\n${parsed.errors.join("\n")}\n\nТеперь отправьте текст для замены:`
                 : "Теперь отправьте текст для замены:");
             return;
         }
         if (state.step === "await_find") {
             const findText = (0, textNormalize_1.normalizeText)(text);
             if (!findText) {
-                await ctx.reply("find text cannot be empty. Send text to find:");
+                await ctx.reply("Текст для поиска не может быть пустым. Отправьте текст для поиска:");
                 return;
             }
             options.state.setRedPostsState(userId, {
@@ -212,12 +212,12 @@ function registerRedPostsFlow(bot, options) {
                 step: "await_replace",
                 findText
             });
-            await ctx.reply("Now send replacement text:");
+            await ctx.reply("Теперь отправьте текст, на который заменить:");
             return;
         }
         const replaceText = (0, textNormalize_1.normalizeText)(text);
         if (!replaceText) {
-            await ctx.reply("replace text cannot be empty. Send replacement text:");
+            await ctx.reply("Текст замены не может быть пустым. Отправьте текст замены:");
             return;
         }
         const task = {
@@ -238,8 +238,8 @@ function registerRedPostsFlow(bot, options) {
             groups: task.groupIds.length
         }, "red_posts task queued");
         await ctx.reply([
-            `Task queued: taskId=${task.taskId}, groups=${jobsCount}`,
-            state.skippedLinks.length > 0 ? `Skipped links:\n${state.skippedLinks.join("\n")}` : ""
+            `Задача поставлена в очередь: taskId=${task.taskId}, сообществ=${jobsCount}`,
+            state.skippedLinks.length > 0 ? `Пропущенные ссылки:\n${state.skippedLinks.join("\n")}` : ""
         ]
             .filter(Boolean)
             .join("\n\n"));
