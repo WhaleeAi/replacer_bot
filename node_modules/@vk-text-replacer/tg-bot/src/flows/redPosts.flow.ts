@@ -1,9 +1,9 @@
 import { InlineKeyboard, type Bot, type Context } from "grammy";
+import { API } from "vk-io";
 import type { Logger } from "pino";
 import { parsePublicLinks } from "../utils/parsePublicLinks";
 import { normalizeText } from "../utils/textNormalize";
 import type { QueueService } from "../services/queue.service";
-import type { API } from "vk-io";
 import type { StateService } from "../services/state.service";
 import { randomUUID } from "node:crypto";
 import type { RedPostsTask } from "@vk-text-replacer/shared";
@@ -16,6 +16,7 @@ import {
 } from "@vk-text-replacer/shared";
 
 interface RedPostsFlowOptions {
+  apiVersion: string;
   databaseUrl: string;
   queueService: QueueService;
   logger: Logger;
@@ -80,7 +81,7 @@ function buildPacksKeyboard(packs: UserPackSummary[]): InlineKeyboard | null {
 async function showLinksPrompt(ctx: Context, packs: UserPackSummary[]): Promise<void> {
   const keyboard = buildPacksKeyboard(packs);
   await ctx.reply(
-    "Token saved. Send public links (one per line) or tap one of your packs below:",
+    "Токен сохранен. Теперь отправьте ссылки на сообщества, по одной в строке, или выберите пак:",
     keyboard ? { reply_markup: keyboard } : undefined
   );
 }
@@ -218,20 +219,25 @@ export function registerRedPostsFlow(bot: Bot<Context>, options: RedPostsFlowOpt
     }
 
     if (state.step === "await_links") {
+      const resolveApi =
+        options.vkApi ??
+        (state.vkAccessToken
+          ? new API({ token: state.vkAccessToken, apiVersion: options.apiVersion })
+          : null);
       const links = text
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean);
 
-      const parsed = await parsePublicLinks(links, { vkApi: options.vkApi });
+      const parsed = await parsePublicLinks(links, { vkApi: resolveApi });
       if (parsed.groupIds.length === 0) {
         const packs = await listUserPacks(options.databaseUrl, userId);
         const keyboard = buildPacksKeyboard(packs);
         await ctx.reply(
           [
-            "Could not resolve any public link.",
-            parsed.errors.length > 0 ? `Invalid links:\n${parsed.errors.join("\n")}` : "",
-            "Try again with links, or select a pack:"
+            "Не смог найти валидные ссылки.",
+            parsed.errors.length > 0 ? `Невалидные:\n${parsed.errors.join("\n")}` : "",
+            "Попробуйте еще раз или выберите пак:"
           ]
             .filter(Boolean)
             .join("\n\n"),
@@ -250,8 +256,8 @@ export function registerRedPostsFlow(bot: Bot<Context>, options: RedPostsFlowOpt
 
       await ctx.reply(
         parsed.errors.length > 0
-          ? `Some links were skipped:\n${parsed.errors.join("\n")}\n\nNow send text to find:`
-          : "Now send text to find:"
+          ? `Some links were skipped:\n${parsed.errors.join("\n")}\n\nТеперь отправьте текст для замены:`
+          : "Теперь отправьте текст для замены:"
       );
       return;
     }

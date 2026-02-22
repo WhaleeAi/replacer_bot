@@ -37,8 +37,22 @@ async function bootstrap(): Promise<void> {
     state
   });
   registerAddPackFlow(bot, { databaseUrl: env.databaseUrl, logger, state, vkApi });
-  registerRedPostsFlow(bot, { databaseUrl: env.databaseUrl, queueService, logger, state, vkApi });
-  registerRedCommentsFlow(bot, { databaseUrl: env.databaseUrl, queueService, logger, state, vkApi });
+  registerRedPostsFlow(bot, {
+    apiVersion: env.vkApiVersion,
+    databaseUrl: env.databaseUrl,
+    queueService,
+    logger,
+    state,
+    vkApi
+  });
+  registerRedCommentsFlow(bot, {
+    apiVersion: env.vkApiVersion,
+    databaseUrl: env.databaseUrl,
+    queueService,
+    logger,
+    state,
+    vkApi
+  });
 
   await bot.start({
     onStart: (botInfo) => logger.info({ username: botInfo.username }, "Telegram bot started")

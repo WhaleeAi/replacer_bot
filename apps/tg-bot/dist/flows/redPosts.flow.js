@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerRedPostsFlow = registerRedPostsFlow;
 const grammy_1 = require("grammy");
+const vk_io_1 = require("vk-io");
 const parsePublicLinks_1 = require("../utils/parsePublicLinks");
 const textNormalize_1 = require("../utils/textNormalize");
 const node_crypto_1 = require("node:crypto");
@@ -49,7 +50,7 @@ function buildPacksKeyboard(packs) {
 }
 async function showLinksPrompt(ctx, packs) {
     const keyboard = buildPacksKeyboard(packs);
-    await ctx.reply("Token saved. Send public links (one per line) or tap one of your packs below:", keyboard ? { reply_markup: keyboard } : undefined);
+    await ctx.reply("Токен сохранен. Теперь отправьте ссылки на сообщества, по одной в строке, или выберите пак:", keyboard ? { reply_markup: keyboard } : undefined);
 }
 function registerRedPostsFlow(bot, options) {
     bot.command("red_posts", async (ctx) => {
@@ -165,18 +166,22 @@ function registerRedPostsFlow(bot, options) {
             return;
         }
         if (state.step === "await_links") {
+            const resolveApi = options.vkApi ??
+                (state.vkAccessToken
+                    ? new vk_io_1.API({ token: state.vkAccessToken, apiVersion: options.apiVersion })
+                    : null);
             const links = text
                 .split(/\r?\n/)
                 .map((line) => line.trim())
                 .filter(Boolean);
-            const parsed = await (0, parsePublicLinks_1.parsePublicLinks)(links, { vkApi: options.vkApi });
+            const parsed = await (0, parsePublicLinks_1.parsePublicLinks)(links, { vkApi: resolveApi });
             if (parsed.groupIds.length === 0) {
                 const packs = await (0, shared_1.listUserPacks)(options.databaseUrl, userId);
                 const keyboard = buildPacksKeyboard(packs);
                 await ctx.reply([
-                    "Could not resolve any public link.",
-                    parsed.errors.length > 0 ? `Invalid links:\n${parsed.errors.join("\n")}` : "",
-                    "Try again with links, or select a pack:"
+                    "Не смог найти валидные ссылки.",
+                    parsed.errors.length > 0 ? `Невалидные:\n${parsed.errors.join("\n")}` : "",
+                    "Попробуйте еще раз или выберите пак:"
                 ]
                     .filter(Boolean)
                     .join("\n\n"), keyboard ? { reply_markup: keyboard } : undefined);
@@ -190,8 +195,8 @@ function registerRedPostsFlow(bot, options) {
                 skippedLinks: parsed.errors
             });
             await ctx.reply(parsed.errors.length > 0
-                ? `Some links were skipped:\n${parsed.errors.join("\n")}\n\nNow send text to find:`
-                : "Now send text to find:");
+                ? `Некоторые ссылки были пропущены:\n${parsed.errors.join("\n")}\n\nТеперь отправьте текст для замены:`
+                : "Теперь отправьте текст для замены:");
             return;
         }
         if (state.step === "await_find") {

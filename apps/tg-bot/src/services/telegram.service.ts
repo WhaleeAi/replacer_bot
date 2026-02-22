@@ -30,7 +30,7 @@ export function registerBaseHandlers(bot: Bot<Context>, options: RegisterTelegra
 
     const userId = ctx.from?.id;
     if (!userId) {
-      await ctx.reply("Access required. Use /start to request access.");
+      await ctx.reply("Требуется доступ. Нажмите /start чтобы отправить запрос.");
       return;
     }
 
@@ -43,7 +43,7 @@ export function registerBaseHandlers(bot: Bot<Context>, options: RegisterTelegra
     }
 
     if (!allowed) {
-      await ctx.reply("Access required. Use /start to request access.");
+      await ctx.reply("Требуется доступ. Нажмите /start чтобы отправить запрос.");
       return;
     }
 

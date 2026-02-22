@@ -1,6 +1,6 @@
 import { InlineKeyboard, type Bot, type Context } from "grammy";
+import { API } from "vk-io";
 import type { Logger } from "pino";
-import type { API } from "vk-io";
 import { randomUUID } from "node:crypto";
 import {
   getVkAccessTokenByTelegramUserId,
@@ -16,6 +16,7 @@ import { parsePublicLinks } from "../utils/parsePublicLinks";
 import { normalizeText } from "../utils/textNormalize";
 
 interface RedCommentsFlowOptions {
+  apiVersion: string;
   databaseUrl: string;
   queueService: QueueService;
   logger: Logger;
@@ -76,7 +77,7 @@ function buildPacksKeyboard(packs: UserPackSummary[]): InlineKeyboard | null {
 async function showLinksPrompt(ctx: Context, packs: UserPackSummary[]): Promise<void> {
   const keyboard = buildPacksKeyboard(packs);
   await ctx.reply(
-    "Send community links (one per line) or select pack below:",
+    "Теперь отправьте ссылки на сообщества, по одной в строке, или выберите пак:",
     keyboard ? { reply_markup: keyboard } : undefined
   );
 }
@@ -157,7 +158,7 @@ export function registerRedCommentsFlow(bot: Bot<Context>, options: RedCommentsF
     });
 
     await ctx.answerCallbackQuery({ text: `Pack selected (${groupIds.length})` });
-    await ctx.reply("Send fragment of post text (we will process comments under matching posts):");
+    await ctx.reply("Отправьте фрагмент текста поста (мы обработаем комментарии под подходящими постами):");
   });
 
   bot.on("message:text", async (ctx, next) => {
@@ -203,12 +204,17 @@ export function registerRedCommentsFlow(bot: Bot<Context>, options: RedCommentsF
     }
 
     if (state.step === "await_links") {
+      const resolveApi =
+        options.vkApi ??
+        (state.vkAccessToken
+          ? new API({ token: state.vkAccessToken, apiVersion: options.apiVersion })
+          : null);
       const links = text
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean);
 
-      const parsed = await parsePublicLinks(links, { vkApi: options.vkApi });
+      const parsed = await parsePublicLinks(links, { vkApi: resolveApi });
       if (parsed.groupIds.length === 0) {
         const packs = await listUserPacks(options.databaseUrl, userId);
         const keyboard = buildPacksKeyboard(packs);
@@ -231,7 +237,7 @@ export function registerRedCommentsFlow(bot: Bot<Context>, options: RedCommentsF
         groupIds: parsed.groupIds,
         skippedLinks: parsed.errors
       });
-      await ctx.reply("Send fragment of post text (we will process comments under matching posts):");
+      await ctx.reply("Отправьте фрагмент текста поста (мы обработаем комментарии под подходящими постами):");
       return;
     }
 

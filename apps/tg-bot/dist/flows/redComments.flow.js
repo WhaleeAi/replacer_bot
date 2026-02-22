@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerRedCommentsFlow = registerRedCommentsFlow;
 const grammy_1 = require("grammy");
+const vk_io_1 = require("vk-io");
 const node_crypto_1 = require("node:crypto");
 const shared_1 = require("@vk-text-replacer/shared");
 const parsePublicLinks_1 = require("../utils/parsePublicLinks");
@@ -49,7 +50,7 @@ function buildPacksKeyboard(packs) {
 }
 async function showLinksPrompt(ctx, packs) {
     const keyboard = buildPacksKeyboard(packs);
-    await ctx.reply("Send community links (one per line) or select pack below:", keyboard ? { reply_markup: keyboard } : undefined);
+    await ctx.reply("Теперь отправьте ссылки на сообщества, по одной в строке, или выберите пак:", keyboard ? { reply_markup: keyboard } : undefined);
 }
 function registerRedCommentsFlow(bot, options) {
     bot.command("red_comments", async (ctx) => {
@@ -115,7 +116,7 @@ function registerRedCommentsFlow(bot, options) {
             skippedLinks: []
         });
         await ctx.answerCallbackQuery({ text: `Pack selected (${groupIds.length})` });
-        await ctx.reply("Send fragment of post text (we will process comments under matching posts):");
+        await ctx.reply("Отправьте фрагмент текста поста (мы обработаем комментарии под подходящими постами):");
     });
     bot.on("message:text", async (ctx, next) => {
         const userId = ctx.from?.id;
@@ -154,11 +155,15 @@ function registerRedCommentsFlow(bot, options) {
             return;
         }
         if (state.step === "await_links") {
+            const resolveApi = options.vkApi ??
+                (state.vkAccessToken
+                    ? new vk_io_1.API({ token: state.vkAccessToken, apiVersion: options.apiVersion })
+                    : null);
             const links = text
                 .split(/\r?\n/)
                 .map((line) => line.trim())
                 .filter(Boolean);
-            const parsed = await (0, parsePublicLinks_1.parsePublicLinks)(links, { vkApi: options.vkApi });
+            const parsed = await (0, parsePublicLinks_1.parsePublicLinks)(links, { vkApi: resolveApi });
             if (parsed.groupIds.length === 0) {
                 const packs = await (0, shared_1.listUserPacks)(options.databaseUrl, userId);
                 const keyboard = buildPacksKeyboard(packs);
@@ -177,7 +182,7 @@ function registerRedCommentsFlow(bot, options) {
                 groupIds: parsed.groupIds,
                 skippedLinks: parsed.errors
             });
-            await ctx.reply("Send fragment of post text (we will process comments under matching posts):");
+            await ctx.reply("Отправьте фрагмент текста поста (мы обработаем комментарии под подходящими постами):");
             return;
         }
         if (state.step === "await_post_fragment") {

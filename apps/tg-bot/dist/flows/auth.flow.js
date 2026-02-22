@@ -42,11 +42,11 @@ function registerAuthFlow(bot, options) {
             await ctx.api.sendMessage(options.adminTgUserId, formatRequestText(ctx, userId), {
                 reply_markup: buildApprovalKeyboard(userId)
             });
-            await ctx.reply("Отправили запрос админу, дождитесь одобрения.");
+            await ctx.reply("Запрос отправлен админу. Подождите одобрения.");
         }
         catch (error) {
             options.logger.error({ err: error, userId }, "Failed to send access request to admin");
-            await ctx.reply("Failed to send request to admin. Try later.");
+            await ctx.reply("Не удалось отправить запрос админу. Попробуйте позже.");
         }
     });
     bot.command("help", async (ctx) => {

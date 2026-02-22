@@ -1,9 +1,10 @@
 import { type Bot, type Context } from "grammy";
+import { API } from "vk-io";
 import type { Logger } from "pino";
 import type { QueueService } from "../services/queue.service";
-import type { API } from "vk-io";
 import type { StateService } from "../services/state.service";
 interface RedPostsFlowOptions {
+    apiVersion: string;
     databaseUrl: string;
     queueService: QueueService;
     logger: Logger;

@@ -14,7 +14,7 @@ function normalizeToken(raw: string): string {
   if (!trimmed) {
     return "";
   }
-  const match = trimmed.match(/^(?:https?:\/\/)?(?:m\.)?vk\.com\/([^/?#]+)/i);
+  const match = trimmed.match(/^(?:https?:\/\/)?(?:m\.)?vk\.(?:com|ru)\/([^/?#]+)/i);
   if (match?.[1]) {
     return match[1].trim();
   }
