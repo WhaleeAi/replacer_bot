@@ -91,6 +91,7 @@ export function registerRedCommentsFlow(bot: Bot<Context>, options: RedCommentsF
 
     options.state.clearRedPostsState(userId);
     options.state.clearAddPackState(userId);
+    options.state.clearPackEditState(userId);
 
     const stored = await getVkAccessTokenByTelegramUserId(options.databaseUrl, userId);
     if (stored && isRecentWithinOneHour(stored.updatedAt)) {

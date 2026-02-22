@@ -7,7 +7,7 @@ const grammy_1 = require("grammy");
 const shared_1 = require("@vk-text-replacer/shared");
 const queue_service_1 = require("./services/queue.service");
 const auth_flow_1 = require("./flows/auth.flow");
-const addPack_flow_1 = require("./flows/addPack.flow");
+const redPacks_flow_1 = require("./flows/redPacks.flow");
 const redPosts_flow_1 = require("./flows/redPosts.flow");
 const redComments_flow_1 = require("./flows/redComments.flow");
 const telegram_service_1 = require("./services/telegram.service");
@@ -35,7 +35,7 @@ async function bootstrap() {
         logger,
         state
     });
-    (0, addPack_flow_1.registerAddPackFlow)(bot, { databaseUrl: env.databaseUrl, logger, state, vkApi });
+    (0, redPacks_flow_1.registerRedPacksFlow)(bot, { apiVersion: env.vkApiVersion, databaseUrl: env.databaseUrl, logger, state, vkApi });
     (0, redPosts_flow_1.registerRedPostsFlow)(bot, {
         apiVersion: env.vkApiVersion,
         databaseUrl: env.databaseUrl,

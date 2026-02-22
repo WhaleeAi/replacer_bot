@@ -23,3 +23,5 @@ export interface UserPackSummary {
 export declare function createUserPack(databaseUrl: string, telegramUserId: number, name: string, groupIds: number[]): Promise<number>;
 export declare function listUserPacks(databaseUrl: string, telegramUserId: number): Promise<UserPackSummary[]>;
 export declare function getUserPackGroupIds(databaseUrl: string, telegramUserId: number, packId: number): Promise<number[] | null>;
+export declare function appendUserPackGroups(databaseUrl: string, telegramUserId: number, packId: number, groupIds: number[]): Promise<number | null>;
+export declare function deleteUserPack(databaseUrl: string, telegramUserId: number, packId: number): Promise<boolean>;

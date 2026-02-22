@@ -42,7 +42,7 @@ function registerAddPackFlow(bot, options) {
                 step: "await_links",
                 name: text
             });
-            await ctx.reply("Now send public links, one per line:");
+            await ctx.reply("Теперь отправьте ссылки на сообщества, по одной в строке:");
             return;
         }
         const links = text

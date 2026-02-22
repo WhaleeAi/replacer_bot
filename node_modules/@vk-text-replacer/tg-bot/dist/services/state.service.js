@@ -6,6 +6,7 @@ function createStateService() {
     const pendingAuthUsers = new Map();
     const redPostsState = new Map();
     const addPackState = new Map();
+    const packEditState = new Map();
     const redCommentsState = new Map();
     return {
         authorize(userId) {
@@ -41,6 +42,15 @@ function createStateService() {
         },
         clearAddPackState(userId) {
             addPackState.delete(userId);
+        },
+        getPackEditState(userId) {
+            return packEditState.get(userId);
+        },
+        setPackEditState(userId, state) {
+            packEditState.set(userId, state);
+        },
+        clearPackEditState(userId) {
+            packEditState.delete(userId);
         },
         getRedCommentsState(userId) {
             return redCommentsState.get(userId);

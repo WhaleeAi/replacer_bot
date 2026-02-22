@@ -44,6 +44,7 @@ export function registerAuthFlow(bot: Bot<Context>, options: AuthFlowOptions): v
 
     options.state.clearRedPostsState(userId);
     options.state.clearAddPackState(userId);
+    options.state.clearPackEditState(userId);
     options.state.clearRedCommentsState(userId);
 
     if (options.adminTgUserId <= 0) {
@@ -67,7 +68,7 @@ export function registerAuthFlow(bot: Bot<Context>, options: AuthFlowOptions): v
       [
         "/start - request access",
         "/help - help",
-        "/add_pack - create pack from public links",
+        "/red_packs - manage packs",
         "/red_posts - run text replacement",
         "/red_comments - replace comments under matched posts"
       ].join("\n")

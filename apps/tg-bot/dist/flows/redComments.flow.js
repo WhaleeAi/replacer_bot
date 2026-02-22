@@ -60,6 +60,7 @@ function registerRedCommentsFlow(bot, options) {
         }
         options.state.clearRedPostsState(userId);
         options.state.clearAddPackState(userId);
+        options.state.clearPackEditState(userId);
         const stored = await (0, shared_1.getVkAccessTokenByTelegramUserId)(options.databaseUrl, userId);
         if (stored && isRecentWithinOneHour(stored.updatedAt)) {
             const packs = await (0, shared_1.listUserPacks)(options.databaseUrl, userId);

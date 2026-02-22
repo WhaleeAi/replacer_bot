@@ -2,7 +2,7 @@
 import { createLogger, ensureDatabaseSchema, getEnv } from "@vk-text-replacer/shared";
 import { createQueueService } from "./services/queue.service";
 import { registerAuthFlow } from "./flows/auth.flow";
-import { registerAddPackFlow } from "./flows/addPack.flow";
+import { registerRedPacksFlow } from "./flows/redPacks.flow";
 import { registerRedPostsFlow } from "./flows/redPosts.flow";
 import { registerRedCommentsFlow } from "./flows/redComments.flow";
 import { registerBaseHandlers } from "./services/telegram.service";
@@ -36,7 +36,7 @@ async function bootstrap(): Promise<void> {
     logger,
     state
   });
-  registerAddPackFlow(bot, { databaseUrl: env.databaseUrl, logger, state, vkApi });
+  registerRedPacksFlow(bot, { apiVersion: env.vkApiVersion, databaseUrl: env.databaseUrl, logger, state, vkApi });
   registerRedPostsFlow(bot, {
     apiVersion: env.vkApiVersion,
     databaseUrl: env.databaseUrl,

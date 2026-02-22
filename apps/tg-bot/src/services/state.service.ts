@@ -1,5 +1,6 @@
 export type RedPostsStep = "await_token" | "await_links" | "await_find" | "await_replace";
 export type AddPackStep = "await_name" | "await_links";
+export type PackEditStep = "await_links";
 export type RedCommentsStep =
   | "await_token"
   | "await_links"
@@ -19,6 +20,11 @@ export interface RedPostsDialogState {
 export interface AddPackDialogState {
   step: AddPackStep;
   name: string;
+}
+
+export interface PackEditDialogState {
+  step: PackEditStep;
+  packId: number;
 }
 
 export interface RedCommentsDialogState {
@@ -42,6 +48,9 @@ export interface StateService {
   getAddPackState(userId: number): AddPackDialogState | undefined;
   setAddPackState(userId: number, state: AddPackDialogState): void;
   clearAddPackState(userId: number): void;
+  getPackEditState(userId: number): PackEditDialogState | undefined;
+  setPackEditState(userId: number, state: PackEditDialogState): void;
+  clearPackEditState(userId: number): void;
   getRedCommentsState(userId: number): RedCommentsDialogState | undefined;
   setRedCommentsState(userId: number, state: RedCommentsDialogState): void;
   clearRedCommentsState(userId: number): void;
@@ -52,6 +61,7 @@ export function createStateService(): StateService {
   const pendingAuthUsers = new Map<number, true>();
   const redPostsState = new Map<number, RedPostsDialogState>();
   const addPackState = new Map<number, AddPackDialogState>();
+  const packEditState = new Map<number, PackEditDialogState>();
   const redCommentsState = new Map<number, RedCommentsDialogState>();
 
   return {
@@ -88,6 +98,15 @@ export function createStateService(): StateService {
     },
     clearAddPackState(userId) {
       addPackState.delete(userId);
+    },
+    getPackEditState(userId) {
+      return packEditState.get(userId);
+    },
+    setPackEditState(userId, state) {
+      packEditState.set(userId, state);
+    },
+    clearPackEditState(userId) {
+      packEditState.delete(userId);
     },
     getRedCommentsState(userId) {
       return redCommentsState.get(userId);

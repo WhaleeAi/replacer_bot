@@ -94,6 +94,7 @@ export function registerRedPostsFlow(bot: Bot<Context>, options: RedPostsFlowOpt
     }
 
     options.state.clearAddPackState(userId);
+    options.state.clearPackEditState(userId);
     options.state.clearRedCommentsState(userId);
 
     const stored = await getVkAccessTokenByTelegramUserId(options.databaseUrl, userId);
@@ -135,6 +136,7 @@ export function registerRedPostsFlow(bot: Bot<Context>, options: RedPostsFlowOpt
     }
     options.state.clearRedPostsState(userId);
     options.state.clearAddPackState(userId);
+    options.state.clearPackEditState(userId);
     options.state.clearRedCommentsState(userId);
     await ctx.reply("Current dialog canceled.");
   });

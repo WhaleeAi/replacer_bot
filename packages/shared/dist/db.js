@@ -8,6 +8,8 @@ exports.getVkAccessTokenByTelegramUserId = getVkAccessTokenByTelegramUserId;
 exports.createUserPack = createUserPack;
 exports.listUserPacks = listUserPacks;
 exports.getUserPackGroupIds = getUserPackGroupIds;
+exports.appendUserPackGroups = appendUserPackGroups;
+exports.deleteUserPack = deleteUserPack;
 function createPgClient(databaseUrl) {
     try {
         const { Client } = require("pg");
@@ -195,6 +197,40 @@ async function getUserPackGroupIds(databaseUrl, telegramUserId, packId) {
         return (groups.rows ?? [])
             .map((raw) => Number(asRow(raw).group_id))
             .filter((id) => Number.isFinite(id) && id > 0);
+    });
+}
+async function appendUserPackGroups(databaseUrl, telegramUserId, packId, groupIds) {
+    return withClient(databaseUrl, async (client) => {
+        const access = await client.query(`SELECT p.id
+       FROM users u
+       INNER JOIN user_packs p ON p.user_id = u.id
+       WHERE u.telegram_user_id = $1 AND p.id = $2`, [telegramUserId, packId]);
+        if (!(access.rows ?? []).length) {
+            return null;
+        }
+        let inserted = 0;
+        const uniqueGroupIds = [...new Set(groupIds.map((id) => Math.abs(Number(id))).filter((id) => id > 0))];
+        for (const groupId of uniqueGroupIds) {
+            const result = await client.query(`INSERT INTO user_pack_groups (pack_id, group_id)
+         VALUES ($1, $2)
+         ON CONFLICT (pack_id, group_id) DO NOTHING
+         RETURNING group_id`, [packId, groupId]);
+            if ((result.rows ?? []).length > 0) {
+                inserted += 1;
+            }
+        }
+        return inserted;
+    });
+}
+async function deleteUserPack(databaseUrl, telegramUserId, packId) {
+    return withClient(databaseUrl, async (client) => {
+        const result = await client.query(`DELETE FROM user_packs p
+       USING users u
+       WHERE p.user_id = u.id
+         AND u.telegram_user_id = $1
+         AND p.id = $2
+       RETURNING p.id`, [telegramUserId, packId]);
+        return (result.rows ?? []).length > 0;
     });
 }
 //# sourceMappingURL=db.js.map

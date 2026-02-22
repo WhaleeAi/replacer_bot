@@ -1,5 +1,6 @@
 export type RedPostsStep = "await_token" | "await_links" | "await_find" | "await_replace";
 export type AddPackStep = "await_name" | "await_links";
+export type PackEditStep = "await_links";
 export type RedCommentsStep = "await_token" | "await_links" | "await_post_fragment" | "await_old_comment_fragment" | "await_new_comment_text";
 export interface RedPostsDialogState {
     step: RedPostsStep;
@@ -12,6 +13,10 @@ export interface RedPostsDialogState {
 export interface AddPackDialogState {
     step: AddPackStep;
     name: string;
+}
+export interface PackEditDialogState {
+    step: PackEditStep;
+    packId: number;
 }
 export interface RedCommentsDialogState {
     step: RedCommentsStep;
@@ -33,6 +38,9 @@ export interface StateService {
     getAddPackState(userId: number): AddPackDialogState | undefined;
     setAddPackState(userId: number, state: AddPackDialogState): void;
     clearAddPackState(userId: number): void;
+    getPackEditState(userId: number): PackEditDialogState | undefined;
+    setPackEditState(userId: number, state: PackEditDialogState): void;
+    clearPackEditState(userId: number): void;
     getRedCommentsState(userId: number): RedCommentsDialogState | undefined;
     setRedCommentsState(userId: number, state: RedCommentsDialogState): void;
     clearRedCommentsState(userId: number): void;

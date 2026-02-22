@@ -59,6 +59,7 @@ function registerRedPostsFlow(bot, options) {
             return;
         }
         options.state.clearAddPackState(userId);
+        options.state.clearPackEditState(userId);
         options.state.clearRedCommentsState(userId);
         const stored = await (0, shared_1.getVkAccessTokenByTelegramUserId)(options.databaseUrl, userId);
         if (stored && isRecentWithinOneHour(stored.updatedAt)) {
@@ -95,6 +96,7 @@ function registerRedPostsFlow(bot, options) {
         }
         options.state.clearRedPostsState(userId);
         options.state.clearAddPackState(userId);
+        options.state.clearPackEditState(userId);
         options.state.clearRedCommentsState(userId);
         await ctx.reply("Current dialog canceled.");
     });
@@ -195,7 +197,7 @@ function registerRedPostsFlow(bot, options) {
                 skippedLinks: parsed.errors
             });
             await ctx.reply(parsed.errors.length > 0
-                ? `Некоторые ссылки были пропущены:\n${parsed.errors.join("\n")}\n\nТеперь отправьте текст для замены:`
+                ? `Some links were skipped:\n${parsed.errors.join("\n")}\n\nТеперь отправьте текст для замены:`
                 : "Теперь отправьте текст для замены:");
             return;
         }
