@@ -1,4 +1,4 @@
-export type RedPostsStep = "await_token" | "await_links" | "await_find" | "await_replace";
+export type RedPostsStep = "await_token" | "await_links" | "await_find" | "await_replace" | "await_cutoff_days";
 export type AddPackStep = "await_name" | "await_links";
 export type PackEditStep = "await_links";
 export type RedCommentsStep =
@@ -13,6 +13,7 @@ export interface RedPostsDialogState {
   rawLinks: string[];
   groupIds: number[];
   findText: string;
+  replaceText: string;
   vkAccessToken: string;
   skippedLinks: string[];
 }

@@ -3,16 +3,32 @@ export interface ReplaceService {
   contains(input: string, findText: string): boolean;
 }
 
+function escapeRegex(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildWholeMatchRegex(fragment: string): RegExp | null {
+  if (!fragment) {
+    return null;
+  }
+
+  const escaped = escapeRegex(fragment);
+  // Match only when the full fragment is not glued to letters/digits/underscore.
+  return new RegExp(`(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`, "gu");
+}
+
 export function createReplaceService(): ReplaceService {
   return {
     contains(input: string, findText: string): boolean {
-      return Boolean(findText) && input.includes(findText);
+      const pattern = buildWholeMatchRegex(findText);
+      return pattern ? pattern.test(input) : false;
     },
     replace(input: string, from: string, to: string): string {
-      if (!from) {
+      const pattern = buildWholeMatchRegex(from);
+      if (!pattern) {
         return input;
       }
-      return input.split(from).join(to);
+      return input.replace(pattern, to);
     }
   };
 }

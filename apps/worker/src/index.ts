@@ -80,13 +80,13 @@ async function bootstrap(): Promise<void> {
     taskStats.delete(taskId);
     const text = [
       `taskId: ${taskId}`,
-      `groupsTotal: ${stats.totalGroups}`,
-      `groupsProcessed: ${stats.processedGroups}`,
-      `checkedPosts: ${stats.checkedPosts}`,
-      `editedPosts: ${stats.editedPosts}`,
-      `skippedPosts: ${stats.skippedPosts}`,
-      `errorsCount: ${stats.errorsCount}`,
-      `failedGroups: ${stats.failedGroups}`
+      `Всего групп: ${stats.totalGroups}`,
+      `Групп обработано: ${stats.processedGroups}`,
+      `Пройдено постов: ${stats.checkedPosts}`,
+      `Изменено постов: ${stats.editedPosts}`,
+      `Пропущено постов: ${stats.skippedPosts}`,
+      `Ошибок: ${stats.errorsCount}`,
+      `Проваленных групп: ${stats.failedGroups}`
     ].join("\n");
 
     try {

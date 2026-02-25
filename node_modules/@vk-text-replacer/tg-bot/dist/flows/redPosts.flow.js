@@ -69,6 +69,7 @@ function registerRedPostsFlow(bot, options) {
                 rawLinks: [],
                 groupIds: [],
                 findText: "",
+                replaceText: "",
                 vkAccessToken: stored.accessToken,
                 skippedLinks: []
             });
@@ -80,6 +81,7 @@ function registerRedPostsFlow(bot, options) {
             rawLinks: [],
             groupIds: [],
             findText: "",
+            replaceText: "",
             vkAccessToken: "",
             skippedLinks: []
         });
@@ -215,9 +217,27 @@ function registerRedPostsFlow(bot, options) {
             await ctx.reply("Теперь отправьте текст, на который заменить:");
             return;
         }
-        const replaceText = (0, textNormalize_1.normalizeText)(text);
-        if (!replaceText) {
-            await ctx.reply("Текст замены не может быть пустым. Отправьте текст замены:");
+        if (state.step === "await_replace") {
+            const replaceText = (0, textNormalize_1.normalizeText)(text);
+            if (!replaceText) {
+                await ctx.reply("Текст замены не может быть пустым. Отправьте текст замены:");
+                return;
+            }
+            options.state.setRedPostsState(userId, {
+                ...state,
+                step: "await_cutoff_days",
+                replaceText
+            });
+            await ctx.reply("Введите за сколько последних дней редактировать посты (введите число, например 5: от сегодняшних до четырехдневной давности):");
+            return;
+        }
+        if (state.step !== "await_cutoff_days") {
+            await next();
+            return;
+        }
+        const cutoffDays = Number(text);
+        if (!Number.isInteger(cutoffDays) || cutoffDays <= 0) {
+            await ctx.reply("Введите целое число больше 0, например: 5");
             return;
         }
         const task = {
@@ -225,8 +245,8 @@ function registerRedPostsFlow(bot, options) {
             requestedBy: userId,
             groupIds: state.groupIds,
             findText: state.findText,
-            replaceText,
-            cutoffDays: 4,
+            replaceText: state.replaceText,
+            cutoffDays,
             vkAccessToken: state.vkAccessToken,
             createdAt: new Date().toISOString()
         };
